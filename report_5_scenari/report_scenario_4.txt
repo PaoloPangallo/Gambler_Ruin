@@ -1,0 +1,24 @@
+=====================================================================
+  REPORT DI SIMULAZIONE SCENARIO 4: 4. CUSCINETTO PROTETTIVO
+=====================================================================
+  Descrizione:  Forte svantaggio di gioco (40%) ma protetto da un immenso cuscinetto di capitale iniziale.
+=====================================================================
+
+  [PARAMETRI DI GIOCO]
+  - Capitale Iniziale Giocatore (a): 90 EUR
+  - Capitale Iniziale Banco (b):     10 EUR
+  - Capitale Totale Sistema (N):     100 EUR
+  - Probabilità di Vincita (p):      0.4000
+  - Probabilità di Perdita (q):      0.6000
+
+  [RISULTATI ANALITICI TEORICI]
+  - Probabilità di Fortuna (Vittoria): 0.017342 (1.73%)
+  - Probabilità di Rovina (Sconfitta): 0.982658 (98.27%)
+  - Durata Attesa del Gioco:           441.33 passi
+
+  [RISULTATI EMPIRICI (20.000 simulazioni Monte Carlo)]
+  - Probabilità Fortuna (MC):          0.016350 (Err. Assoluto: 0.000992)
+  - Probabilità Rovina (MC):           0.983650 (Err. Assoluto: 0.000992)
+  - Durata Media Gioco (MC):           442.38 passi (Err. Assoluto: 1.05)
+
+=====================================================================

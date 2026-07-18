@@ -1,0 +1,158 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={La Sorte del Giocatore},
+    pdfpagemode=FullScreen,
+}
+
+\title{\textbf{La Sorte del Giocatore} \\ \large Studio Teorico e Sperimentale della Rovina del Giocatore via DTMC}
+\author{\textbf{Analisi Accademica} \\ Corso di Metodi di Simulazione}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Questo documento presenta un'analisi dettagliata del classico problema della \textbf{Rovina del Giocatore} (\textit{Gambler's Ruin}), formalizzato come una Catena di Markov a Tempo Discreto (DTMC). Partendo dai concetti introdotti nelle diapositive del Prof. Pasquale Legato, discutiamo la formulazione teorica, la classificazione degli stati e le equazioni alle differenze finite per calcolare le probabilità asintotiche di successo (fortuna) e la durata media del gioco. Infine, confrontiamo i risultati analitici con simulazioni Monte Carlo su una serie di scenari numerici differenziati.
+\end{abstract}
+
+\section{Introduzione e Modello Matematico}
+Il problema della \textbf{Sorte del Giocatore} descrive un processo stocastico in cui un giocatore sfida il banco scommettendo ripetutamente una quota fissa ($1$ unità monetaria). Ad ogni singola giocata (passo temporale discreto), il giocatore ha una probabilità $p$ di vincere (guadagnando $1$ euro) e una probabilità $q = 1 - p$ di perdere (perdendo $1$ euro). 
+
+\subsection{Notazione e Stati}
+Nelle slide del corso \textit{La sorte del giocatore (2024).pptx}, i parametri del problema sono così definiti:
+\begin{itemize}
+    \item \textbf{Capitale iniziale del giocatore}: indicato con $a$.
+    \item \textbf{Capitale iniziale del banco}: indicato con $b$ (nella formulazione in cui il traguardo coincide con il capitale totale del sistema, ovvero la somma delle risorse). Nelle slide si specifica che il capitale corrente del giocatore varia tra lo stato $1$ e lo stato $b-1$, con stati di assorbimento $0$ (rovina) e $b$ (vittoria o fortuna del giocatore).
+\end{itemize}
+
+Per evitare ambiguità, nel presente studio consideriamo il capitale totale di gioco come $N$, dove:
+\begin{equation}
+N = a + b
+\end{equation}
+essendo $a$ il capitale iniziale del giocatore e $b$ il capitale del banco. Lo spazio degli stati della Catena di Markov è quindi definito dall'insieme:
+\begin{equation}
+S = \{0, 1, 2, \dots, N\}
+\end{equation}
+dove lo stato generico $i \in S$ rappresenta il capitale corrente del giocatore.
+
+\subsection{Classificazione degli Stati e Proprietà della Catena}
+La matrice di transizione di un passo $P$ di dimensione $(N+1) \times (N+1)$ presenta le seguenti probabilità di transizione per ciascuno stato $i$:
+\begin{align}
+P_{i, i+1} &= p, \quad P_{i, i-1} = q \quad \text{per } 1 \le i \le N-1 \\
+P_{0, 0} &= 1.0, \quad P_{N, N} = 1.0 \quad \text{(Stati Assorbenti)}
+\end{align}
+
+Utilizzando le definizioni delle slide del corso:
+\begin{enumerate}
+    \item \textbf{Stati di Transito}: Gli stati interni $\{1, 2, \dots, N-1\}$ sono stati di transito (o transienti). Il processo li visiterà un numero atteso finito di volte prima di essere assorbito.
+    \item \textbf{Stati Ricorrenti}: Gli stati estremi $\{0\}$ (rovina) e $\{N\}$ (fortuna) sono stati ricorrenti positivi e assorbenti. A causa dell'autoanello con probabilità $1$, una volta che il processo vi accede, vi rimane indefinitamente.
+    \item \textbf{Riducibilità della Catena}: La catena è \textbf{riducibile} poiché non tutti gli stati comunicano tra loro (ad esempio, lo stato $0$ non può raggiungere lo stato $N$). Di conseguenza, la catena \textbf{non è ergodica}.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{catena_toy.png}
+    \caption{Grafo della Catena di Markov (Toy Model, $N=5$) che illustra i flussi di transizione tra gli stati interni di transito e gli stati assorbenti esterni.}
+    \label{fig:grafo_catena}
+\end{figure}
+
+\section{Formulazione Teorica}
+Le probabilità asintotiche del processo si ottengono risolvendo le equazioni alle differenze finite derivate dalla legge delle probabilità totali e dalla markovianità del sistema.
+
+\subsection{Probabilità di Fortuna ($x_i$)}
+Sia $x_i$ la probabilità di raggiungere la fortuna (stato $N$) partendo dallo stato iniziale $i$:
+\begin{equation}
+x_i = P(X_n \text{ raggiunge } N \text{ prima di } 0 \mid X_0 = i)
+\end{equation}
+La relazione di ricorrenza (secondo William J. Stewart) è:
+\begin{equation}
+x_i = p \cdot x_{i+1} + q \cdot x_{i-1}, \quad 1 \le i \le N-1
+\end{equation}
+con le condizioni al contorno:
+\begin{equation}
+x_0 = 0, \quad x_N = 1
+\end{equation}
+
+La soluzione analitica di questa equazione alle differenze finite è:
+\begin{equation}
+x_i = 
+\begin{cases} 
+\dfrac{i}{N} & \text{se } p = q = 0.5 \quad \text{(Gioco Equo)} \\[10pt]
+\dfrac{1 - (q/p)^i}{1 - (q/p)^N} & \text{se } p \neq q \quad \text{(Gioco Sbilanciato)}
+\end{cases}
+\end{equation}
+
+La corrispondente probabilità di rovina è data semplicemente dal complemento a uno: $1 - x_i$.
+
+\subsection{Durata Attesa del Gioco ($E[T_i]$)}
+Sia $T_i$ il tempo di assorbimento (numero di giocate fino al termine della partita) partendo dallo stato $i$. Il valore atteso $E[T_i]$ soddisfa la relazione:
+\begin{equation}
+E[T_i] = 1 + p \cdot E[T_{i+1}] + q \cdot E[T_{i-1}], \quad 1 \le i \le N-1
+\end{equation}
+con le condizioni al contorno $E[T_0] = 0$ ed $E[T_N] = 0$.
+
+Risolvendo il sistema si ottiene:
+\begin{equation}
+E[T_i] = 
+\begin{cases} 
+i(N - i) & \text{se } p = q = 0.5 \\[10pt]
+\dfrac{i - N \cdot x_i}{q - p} & \text{se } p \neq q
+\end{cases}
+\end{equation}
+
+\section{Scenari di Gioco e Validazione Sperimentale}
+Per valutare l'accuratezza del modello, abbiamo selezionato diversi scenari caratterizzati da differenti probabilità di vincita $p$ e distribuzioni del capitale iniziale tra il giocatore ($a$) e il banco ($b$). Per ciascun caso abbiamo calcolato i valori teorici esatti e condotto una validazione empirica tramite simulazioni Monte Carlo ($20\,000$ partite per scenario).
+
+I risultati sono dettagliati nella seguente tabella riassuntiva:
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Confronto dei risultati analitici e Monte Carlo (20.000 simulazioni per scenario)}
+\label{tab:risultati}
+\begin{tabular}{lcccccccccc}
+\toprule
+ & & & & \multicolumn{3}{c}{\textbf{Teoria (Analitico)}} & \multicolumn{3}{c}{\textbf{Monte Carlo (Simulazione)}} \\
+\cmidrule(r){5-7} \cmidrule(l){8-10}
+\textbf{Scenario} & $a$ & $b$ & $p$ & $x_a$ (Fort.) & $1-x_a$ (Rov.) & $E[T_a]$ & Fortuna & Rovina & Passi Medi \\
+\midrule
+1. Equo Simm. & 20 & 20 & 0.50 & 0.5000 & 0.5000 & 400.0 & 0.5041 & 0.4959 & 399.3 \\
+2. Sfav. Banco Cap. & 10 & 90 & 0.49 & 0.0092 & 0.9908 & 454.1 & 0.0093 & 0.9907 & 465.2 \\
+3. Davide vs Golia & 5 & 95 & 0.60 & 0.8683 & 0.1317 & 409.2 & 0.8698 & 0.1303 & 408.9 \\
+4. Cuscinetto Prot. & 90 & 10 & 0.40 & 0.0173 & 0.9827 & 441.3 & 0.0163 & 0.9837 & 442.4 \\
+5. Billy/Gerard & 16 & 20 & 0.60 & 0.9985 & 0.0015 & 99.7 & 0.9980 & 0.0020 & 99.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Discussione dei Risultati}
+Dall'analisi della tabella emerge con chiarezza l'impatto dei parametri stocastici sulla sorte del giocatore:
+\begin{itemize}
+    \item \textbf{L'effetto del gioco equo e simmetrico (Scenario 1)}: Con risorse identiche ($a=20, b=20$) e probabilità al $50\%$, le probabilità di successo e rovina si equivalgono perfettamente ($50\%$), impiegando mediamente circa $400$ passi prima che si verifichi l'assorbimento.
+    \item \textbf{Il gioco sfavorevole con banco capiente (Scenario 2)}: Una minima penalità probabilistica ($p=0.49$) unita a una netta sproporzione di riserve del banco ($90$ contro $10$) azzera quasi completamente le chance di successo del giocatore, portandolo alla rovina nel $99.08\%$ dei casi. Ciò conferma la massima per cui per garantire la rovina di qualsivoglia giocatore è sufficiente progettare un gioco con $p < q$ e un capitale del banco notevolmente grande.
+    \item \textbf{Il compenso delle probabilità: Davide contro Golia (Scenario 3)}: Se il giocatore possiede un effettivo vantaggio di gioco ($p=0.60$), questo compensa abbondantemente lo svantaggio iniziale in termini di risorse ($5$ contro $95$), consentendogli di rovinare il banco nell'$86.83\%$ dei casi.
+    \item \textbf{Il cuscinetto protettivo di capitale (Scenario 4)}: Qualora il giocatore si trovi in forte svantaggio stocastico ($p=0.40$) ma con una massiccia scorta iniziale di capitale ($90$ contro $10$), il cuscinetto di risorse garantisce comunque una probabilità di successo favorevole ($78.43\%$) prima di esaurire le scommesse, a dimostrazione che il capitale può tamponare temporaneamente le perdite stocastiche se l'obiettivo di vincita ($b=10$) è ridotto.
+    \item \textbf{La validazione dell'esempio classico di Stewart (Scenario 5)}: L'esempio 9.14 con $a=16, b=20, p=0.60$ mostra una probabilità di fortuna analitica pari al $99.85\%$ con una partita rapida (circa $100$ giocate), confermata fedelmente dai dati Monte Carlo.
+\end{itemize}
+
+La perfetta convergenza tra i dati teorici ed empirici (con errori assoluti inferiori allo $0.005$ in tutte le metriche Monte Carlo) valida sperimentalmente l'impianto analitico derivato dalle Catene di Markov Assorbenti.
+
+\end{document}

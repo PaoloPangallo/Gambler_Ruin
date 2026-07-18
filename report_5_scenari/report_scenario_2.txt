@@ -1,0 +1,24 @@
+=====================================================================
+  REPORT DI SIMULAZIONE SCENARIO 2: 2. SFAV. BANCO CAPIENTE
+=====================================================================
+  Descrizione:  Lieve svantaggio di probabilità (Prof. Legato) con un banco molto capiente. Rovina quasi certa.
+=====================================================================
+
+  [PARAMETRI DI GIOCO]
+  - Capitale Iniziale Giocatore (a): 10 EUR
+  - Capitale Iniziale Banco (b):     90 EUR
+  - Capitale Totale Sistema (N):     100 EUR
+  - Probabilità di Vincita (p):      0.4900
+  - Probabilità di Perdita (q):      0.5100
+
+  [RISULTATI ANALITICI TEORICI]
+  - Probabilità di Fortuna (Vittoria): 0.009173 (0.92%)
+  - Probabilità di Rovina (Sconfitta): 0.990827 (99.08%)
+  - Durata Attesa del Gioco:           454.14 passi
+
+  [RISULTATI EMPIRICI (20.000 simulazioni Monte Carlo)]
+  - Probabilità Fortuna (MC):          0.009300 (Err. Assoluto: 0.000127)
+  - Probabilità Rovina (MC):           0.990700 (Err. Assoluto: 0.000127)
+  - Durata Media Gioco (MC):           465.17 passi (Err. Assoluto: 11.04)
+
+=====================================================================

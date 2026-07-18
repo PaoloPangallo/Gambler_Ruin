@@ -1,0 +1,24 @@
+=====================================================================
+  REPORT DI SIMULAZIONE SCENARIO 5: 5. BILLY/GERARD (STEWART)
+=====================================================================
+  Descrizione:  Esempio classico 9.14 (p. 234) del libro di Stewart con probabilità di fortuna al 99.85%.
+=====================================================================
+
+  [PARAMETRI DI GIOCO]
+  - Capitale Iniziale Giocatore (a): 16 EUR
+  - Capitale Iniziale Banco (b):     20 EUR
+  - Capitale Totale Sistema (N):     36 EUR
+  - Probabilità di Vincita (p):      0.6000
+  - Probabilità di Perdita (q):      0.4000
+
+  [RISULTATI ANALITICI TEORICI]
+  - Probabilità di Fortuna (Vittoria): 0.998478 (99.85%)
+  - Probabilità di Rovina (Sconfitta): 0.001522 (0.15%)
+  - Durata Attesa del Gioco:           99.73 passi
+
+  [RISULTATI EMPIRICI (20.000 simulazioni Monte Carlo)]
+  - Probabilità Fortuna (MC):          0.998000 (Err. Assoluto: 0.000478)
+  - Probabilità Rovina (MC):           0.002000 (Err. Assoluto: 0.000478)
+  - Durata Media Gioco (MC):           99.44 passi (Err. Assoluto: 0.28)
+
+=====================================================================

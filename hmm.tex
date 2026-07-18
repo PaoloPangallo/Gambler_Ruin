@@ -1,0 +1,2237 @@
+% =====================================================================
+%  DISPENSE SU HIDDEN MARKOV MODELS
+%  Un percorso pedagogico dalle catene di Markov agli algoritmi
+%  di inferenza e apprendimento, con esempi, implementazioni e
+%  collegamenti al machine learning moderno.
+%
+%  Compilazione consigliata:  pdflatex -shell-escape hmm_dispense.tex
+%  (due passaggi per indice e riferimenti incrociati)
+% =====================================================================
+\documentclass[11pt,a4paper,oneside]{book}
+
+% ---------- Encoding e lingua ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ---------- Geometria pagina ----------
+\usepackage[a4paper,margin=2.5cm,headheight=14pt]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---------- Matematica ----------
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage{empheq}
+\usepackage{bm}
+\usepackage{esvect}
+\usepackage{stmaryrd}
+
+% ---------- Grafica ----------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,shapes,decorations.pathreplacing,backgrounds,automata,chains,matrix}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+
+% ---------- Tabelle ----------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+% ---------- Algoritmi e codice ----------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\definecolor{codekw}{rgb}{0.10,0.30,0.65}
+\definecolor{codecom}{rgb}{0.25,0.55,0.30}
+\definecolor{codestr}{rgb}{0.70,0.20,0.20}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecom}\itshape,
+    stringstyle=\color{codestr},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    frame=single,
+    rulecolor=\color{black!30},
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    captionpos=b
+}
+\lstset{style=pythonstyle}
+
+% ---------- Hyperref e colori ----------
+\usepackage[colorlinks=true,
+            linkcolor=blue!60!black,
+            citecolor=green!50!black,
+            urlcolor=blue!60!black]{hyperref}
+\usepackage{cleveref}
+
+% ---------- Caption ed elenchi ----------
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+
+% ---------- Box e note ----------
+\usepackage[most]{tcolorbox}
+\tcbset{
+    notebox/.style={colback=blue!5,colframe=blue!50!black,
+                    fonttitle=\bfseries,
+                    boxrule=0.5pt,arc=2pt,
+                    left=6pt,right=6pt,top=4pt,bottom=4pt},
+    warningbox/.style={colback=red!5,colframe=red!60!black,
+                       fonttitle=\bfseries,
+                       boxrule=0.5pt,arc=2pt},
+    insightbox/.style={colback=green!5,colframe=green!50!black,
+                       fonttitle=\bfseries,
+                       boxrule=0.5pt,arc=2pt}
+}
+
+% ---------- Ambienti teoremi (numerati per capitolo) ----------
+\theoremstyle{plain}
+\newtheorem{teorema}{Teorema}[chapter]
+\newtheorem{lemma}[teorema]{Lemma}
+\newtheorem{proposizione}[teorema]{Proposizione}
+\newtheorem{corollario}[teorema]{Corollario}
+
+\theoremstyle{definition}
+\newtheorem{definizione}[teorema]{Definizione}
+\newtheorem{esempio}[teorema]{Esempio}
+\newtheorem{esercizio}[teorema]{Esercizio}
+
+\theoremstyle{remark}
+\newtheorem{osservazione}[teorema]{Osservazione}
+\newtheorem*{intuizione}{Intuizione}
+\newtheorem*{nota}{Nota}
+
+% ---------- Notazione: macro per coerenza globale ----------
+% Insiemi numerici
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+% Variabili HMM: convenzioni fisse
+\newcommand{\states}{\mathcal{S}}            % insieme degli stati nascosti
+\newcommand{\obssym}{\mathcal{V}}            % alfabeto delle osservazioni
+\newcommand{\Amat}{\mathbf{A}}               % matrice di transizione
+\newcommand{\Bmat}{\mathbf{B}}               % matrice di emissione
+\newcommand{\initvec}{\boldsymbol{\pi}}      % distribuzione iniziale
+\newcommand{\hmm}{\lambda}                   % parametri dell'HMM (A,B,pi)
+\newcommand{\Nstates}{N}                     % numero di stati
+\newcommand{\Msym}{M}                        % cardinalita alfabeto
+\newcommand{\Tlen}{T}                        % lunghezza sequenza
+\newcommand{\seqobs}{\mathbf{o}}             % sequenza di osservazioni
+\newcommand{\seqstates}{\mathbf{q}}          % sequenza di stati
+\newcommand{\fwd}{\alpha}                    % variabile forward
+\newcommand{\bwd}{\beta}                     % variabile backward
+\newcommand{\vit}{\delta}                    % variabile Viterbi
+\newcommand{\gam}{\gamma}                    % gamma di Baum-Welch
+\newcommand{\xig}{\xi}                       % xi di Baum-Welch
+
+% Operatori
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\indic}[1]{\mathbf{1}\!\left[#1\right]}
+\newcommand{\given}{\,\vert\,}
+\newcommand{\Set}[1]{\left\{#1\right\}}
+
+% Vettori/matrici
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\T}{^{\!\top}}
+
+% ---------- Frontespizio ----------
+\title{\Huge \textbf{Hidden Markov Models}\\[0.4em]
+       \Large Un percorso introduttivo e avanzato\\
+       dalle catene di Markov agli algoritmi di apprendimento}
+\author{Dispense didattiche}
+\date{\today}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\frontmatter
+\maketitle
+
+\begin{center}
+\vspace*{1cm}
+\begin{tcolorbox}[notebox,title=Sinossi del documento,width=0.85\textwidth]
+Queste dispense forniscono una trattazione organica e autosufficiente dei
+\emph{Hidden Markov Models} (HMM), uno dei modelli probabilistici più
+influenti nella storia del machine learning e dell'elaborazione di
+sequenze. Il percorso parte dalle nozioni di probabilità condizionata e
+catene di Markov, costruisce la formalizzazione completa degli HMM,
+deriva passo a passo gli algoritmi Forward, Backward, Viterbi e
+Baum--Welch, affronta le problematiche numeriche di implementazione,
+esamina varianti avanzate e colloca gli HMM nel panorama del machine
+learning moderno (RNN, CRF, Transformer, filtri di Kalman). Ogni
+concetto è introdotto in modo \emph{intuitivo}, poi \emph{formale},
+e infine illustrato da \emph{esempi concreti} e \emph{implementazioni}.
+\end{tcolorbox}
+\end{center}
+
+\tableofcontents
+
+% =====================================================================
+\mainmatter
+% =====================================================================
+
+% =====================================================================
+\chapter{Prerequisiti probabilistici}
+\label{ch:prereq}
+% =====================================================================
+
+Prima di affrontare gli Hidden Markov Models è necessario un linguaggio
+probabilistico solido e condiviso. Questo capitolo non è un riepilogo
+asciutto di formule, ma una ricostruzione mirata di quei concetti che
+useremo \emph{costantemente} nel resto del documento. Chi conosce già
+il materiale può sfogliarlo per fissare la notazione che adotteremo da
+qui in avanti.
+
+\section{Spazi di probabilità e variabili aleatorie}
+
+\begin{intuizione}
+Un \emph{esperimento aleatorio} è una situazione il cui esito non è
+prevedibile con certezza. Tutto l'apparato della probabilità serve a
+quantificare il nostro \emph{grado di credenza} (o, equivalentemente,
+la frequenza relativa attesa) sui possibili esiti.
+\end{intuizione}
+
+\begin{definizione}[Spazio di probabilità]
+Uno \emph{spazio di probabilità} è una terna $(\Omega,\mathcal{F},\Prob)$
+dove:
+\begin{itemize}[leftmargin=*]
+    \item $\Omega$ è l'insieme degli esiti possibili (\emph{spazio
+          campionario});
+    \item $\mathcal{F}$ è una $\sigma$-algebra di sottoinsiemi di
+          $\Omega$ (gli \emph{eventi});
+    \item $\Prob:\mathcal{F}\to[0,1]$ è una misura di probabilità che
+          soddisfa $\Prob(\Omega)=1$ e la $\sigma$-additività.
+\end{itemize}
+\end{definizione}
+
+\begin{definizione}[Variabile aleatoria]
+Una \emph{variabile aleatoria} (v.a.) $X$ è una funzione misurabile
+$X:\Omega\to\mathcal{X}$ dove $\mathcal{X}$ è l'insieme dei valori che
+$X$ può assumere. Diremo che $X$ è \emph{discreta} se $\mathcal{X}$ è
+finito o numerabile, \emph{continua} se ammette una densità rispetto
+alla misura di Lebesgue.
+\end{definizione}
+
+Lungo le dispense useremo principalmente variabili aleatorie discrete:
+gli stati nascosti di un HMM appartengono a un insieme finito, e nelle
+implementazioni di base anche le osservazioni saranno discrete (poi
+estenderemo al caso continuo nel Capitolo~\ref{ch:varianti}).
+
+\paragraph{Distribuzione di probabilità.}
+Per una v.a.\ discreta $X$ con valori in $\mathcal{X}=\{x_1,\dots,x_K\}$,
+la \emph{funzione di massa di probabilità} (\emph{pmf}) è
+\begin{equation}
+    p_X(x_k) = \Prob(X=x_k), \qquad
+    \sum_{k=1}^{K} p_X(x_k) = 1.
+\end{equation}
+
+Per una v.a.\ continua scriveremo invece la \emph{densità} $f_X(x)$
+con $\int_{\R} f_X(x)\,dx = 1$ e $\Prob(X\in A) = \int_A f_X(x)\,dx$.
+
+\section{Probabilità condizionata e regola del prodotto}
+
+\begin{definizione}[Probabilità condizionata]
+Dati due eventi $A,B\in\mathcal{F}$ con $\Prob(B)>0$, la \emph{probabilità
+condizionata di $A$ dato $B$} è
+\begin{equation}
+    \Prob(A\given B) \;=\; \frac{\Prob(A\cap B)}{\Prob(B)}.
+    \label{eq:cond_prob}
+\end{equation}
+\end{definizione}
+
+L'intuizione è semplice ma potente: \emph{ridurre lo spazio campionario
+al sottoinsieme $B$} e domandarsi quanta probabilità, in quel
+sottospazio, è occupata da $A$.
+
+Riarrangiando la \eqref{eq:cond_prob} otteniamo la \textbf{regola del
+prodotto}:
+\begin{equation}
+    \Prob(A\cap B) = \Prob(A\given B)\,\Prob(B) = \Prob(B\given A)\,\Prob(A).
+    \label{eq:prod_rule}
+\end{equation}
+
+La generalizzazione a più eventi è la \emph{chain rule} della
+probabilità, che useremo costantemente:
+\begin{equation}
+    \Prob(X_1,X_2,\dots,X_n)
+    = \Prob(X_1)\prod_{t=2}^{n} \Prob(X_t \given X_1,\dots,X_{t-1}).
+    \label{eq:chain_rule}
+\end{equation}
+
+\begin{osservazione}[Notazione]
+Scriveremo indifferentemente $\Prob(X=x)$ oppure $p(x)$ o ancora
+$\Prob(x)$ quando il contesto è chiaro. Useremo la virgola per
+indicare la congiunzione (``$p(x,y)$'' significa $\Prob(X=x,Y=y)$)
+e la barra verticale per il condizionamento.
+\end{osservazione}
+
+\section{Teorema di Bayes}
+
+Combinando la regola del prodotto in due modi diversi (cf.\
+\eqref{eq:prod_rule}) si ottiene il \emph{teorema di Bayes}, vero
+cuore dell'inferenza statistica:
+\begin{equation}
+    \Prob(H\given E) = \frac{\Prob(E\given H)\,\Prob(H)}{\Prob(E)}.
+    \label{eq:bayes}
+\end{equation}
+
+Qui $H$ rappresenta tipicamente un'ipotesi (\emph{hidden cause}) ed
+$E$ un'evidenza osservabile. I tre ingredienti hanno un nome
+specifico:
+
+\begin{tcolorbox}[notebox,title=Anatomia del Teorema di Bayes]
+\begin{itemize}[leftmargin=*]
+    \item $\Prob(H)$: \textbf{prior}, ciò che credevamo \emph{prima} di
+          osservare $E$;
+    \item $\Prob(E\given H)$: \textbf{likelihood}, quanto è plausibile
+          $E$ se l'ipotesi $H$ è vera;
+    \item $\Prob(H\given E)$: \textbf{posterior}, ciò che crediamo
+          \emph{dopo} aver visto $E$;
+    \item $\Prob(E)=\sum_h \Prob(E\given h)\,\Prob(h)$: termine di
+          normalizzazione (\emph{evidence} o \emph{marginal likelihood}).
+\end{itemize}
+\end{tcolorbox}
+
+Negli HMM useremo Bayes per passare dalla probabilità di vedere certe
+osservazioni \emph{dato} uno stato (modello generativo) alla
+probabilità di uno stato \emph{date} le osservazioni (inferenza).
+
+\section{Indipendenza e indipendenza condizionata}
+
+\begin{definizione}[Indipendenza]
+Due eventi $A,B$ sono \emph{indipendenti} ($A\perp B$) se
+\begin{equation}
+    \Prob(A\cap B) = \Prob(A)\,\Prob(B)
+    \;\;\Longleftrightarrow\;\;
+    \Prob(A\given B) = \Prob(A).
+\end{equation}
+L'indipendenza si estende immediatamente a variabili aleatorie
+($X\perp Y$ se $\Prob(X=x,Y=y)=p_X(x)\,p_Y(y)$ per ogni $x,y$).
+\end{definizione}
+
+\begin{definizione}[Indipendenza condizionata]
+$A$ e $B$ sono \emph{condizionalmente indipendenti dato $C$}
+($A\perp B\given C$) se, per ogni valore di $C$,
+\begin{equation}
+    \Prob(A,B\given C) = \Prob(A\given C)\,\Prob(B\given C).
+    \label{eq:cond_indep}
+\end{equation}
+Equivalentemente: $\Prob(A\given B,C) = \Prob(A\given C)$. Sapere $B$,
+una volta noto $C$, non aggiunge informazione su $A$.
+\end{definizione}
+
+\begin{esempio}[Indipendenza condizionata non è indipendenza]
+Siano $C$ ``il giorno è soleggiato'', $A$ ``Alice fa una passeggiata'',
+$B$ ``Bob fa jogging''. $A$ e $B$ sono in generale \emph{dipendenti}
+(osservare che Alice è uscita aumenta la probabilità che lo abbia
+fatto anche Bob, perché tipicamente è bel tempo). Ma una volta noto
+$C$, le decisioni dei due sono \emph{indipendenti}: il sole spiega
+la correlazione apparente. Questa è esattamente la struttura che
+rende i grafi probabilistici utili, e in particolare gli HMM.
+\end{esempio}
+
+L'indipendenza condizionata è la \emph{spina dorsale} dei modelli
+probabilistici grafici. Per un trattamento più ampio (con d-separation,
+Markov blanket, ecc.) il lettore può consultare Bishop e Pearl. Per i
+nostri scopi basta ricordare il principio: \emph{conoscere il presente
+rende il passato irrilevante per prevedere il futuro}.
+
+\section{Catene di Markov}
+
+\begin{intuizione}
+Una catena di Markov è una sequenza di v.a.\ in cui il futuro dipende
+dal passato \emph{solo attraverso il presente}. È il modello più
+semplice di processo stocastico ``con memoria minima''.
+\end{intuizione}
+
+\begin{definizione}[Catena di Markov del primo ordine]
+Una successione di variabili aleatorie discrete $\{Q_t\}_{t\ge 1}$
+con valori in $\states=\{s_1,\dots,s_{\Nstates}\}$ è una
+\emph{catena di Markov del primo ordine} se soddisfa la
+\textbf{proprietà di Markov}:
+\begin{equation}
+    \Prob(Q_t = s_j \given Q_{t-1}=s_i, Q_{t-2}=s_{k_{t-2}},\dots,Q_1=s_{k_1})
+    = \Prob(Q_t = s_j \given Q_{t-1}=s_i).
+    \label{eq:markov_prop}
+\end{equation}
+\end{definizione}
+
+Assumeremo inoltre la \emph{stazionarietà}: la probabilità di
+transizione non dipende dall'istante $t$, cosicché possiamo definire
+una \emph{matrice di transizione} fissa
+\begin{equation}
+    a_{ij} \;\triangleq\; \Prob(Q_t = s_j \given Q_{t-1}=s_i),
+    \qquad 1\le i,j \le \Nstates,
+    \label{eq:transition_def}
+\end{equation}
+con i vincoli stocastici
+\begin{equation}
+    a_{ij}\ge 0,\qquad \sum_{j=1}^{\Nstates} a_{ij} = 1
+    \;\;\forall\, i.
+    \label{eq:stoc_constraints}
+\end{equation}
+
+A completare la specifica serve una \emph{distribuzione iniziale}
+$\initvec=(\pi_1,\dots,\pi_{\Nstates})$ con
+$\pi_i=\Prob(Q_1=s_i)$ e $\sum_i \pi_i = 1$.
+
+\paragraph{Joint probability di una traiettoria.}
+Combinando la chain rule \eqref{eq:chain_rule} con la proprietà di
+Markov \eqref{eq:markov_prop} si ottiene la probabilità di una
+sequenza di stati $\seqstates = (q_1,q_2,\dots,q_{\Tlen})$:
+\begin{equation}
+    \Prob(\seqstates) =
+    \Prob(Q_1=q_1)\prod_{t=2}^{\Tlen}\Prob(Q_t=q_t\given Q_{t-1}=q_{t-1})
+    = \pi_{q_1}\prod_{t=2}^{\Tlen} a_{q_{t-1},q_t}.
+    \label{eq:joint_chain}
+\end{equation}
+
+\begin{esempio}[Catena del meteo]
+\label{ex:weather_chain}
+Consideriamo una catena con tre stati: $s_1=$ \emph{Pioggia}, $s_2=$
+\emph{Nuvoloso}, $s_3=$ \emph{Sole}. Supponiamo
+\[
+\Amat = \begin{pmatrix}
+0.4 & 0.3 & 0.3\\
+0.2 & 0.6 & 0.2\\
+0.1 & 0.1 & 0.8
+\end{pmatrix},\qquad
+\initvec=(0.2,\,0.3,\,0.5).
+\]
+La probabilità della sequenza ``Sole, Sole, Nuvoloso, Pioggia'' è
+\[
+\pi_3 \cdot a_{33}\cdot a_{32}\cdot a_{21}
+= 0.5 \cdot 0.8 \cdot 0.1 \cdot 0.2 = 0.008.
+\]
+Si noti la struttura \emph{moltiplicativa}: lo stesso meccanismo
+guiderà tutte le derivazioni successive negli HMM.
+\end{esempio}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,auto,node distance=3cm,thick]
+  \node[state, fill=blue!15] (P) {Pioggia};
+  \node[state, fill=gray!20, right=of P] (N) {Nuvoloso};
+  \node[state, fill=yellow!30, right=of N] (S) {Sole};
+
+  \path (P) edge [loop above] node {0.4} (P)
+            edge [bend left=20] node {0.3} (N)
+            edge [bend left=45] node[above]{0.3} (S)
+        (N) edge [loop above] node {0.6} (N)
+            edge [bend left=20] node {0.2} (P)
+            edge [bend left=20] node {0.2} (S)
+        (S) edge [loop above] node {0.8} (S)
+            edge [bend left=20] node {0.1} (N)
+            edge [bend left=45] node[below]{0.1} (P);
+\end{tikzpicture}
+\caption{Diagramma della catena di Markov dell'Esempio~\ref{ex:weather_chain}.
+I nodi sono stati, gli archi sono transizioni etichettate con le
+probabilità $a_{ij}$.}
+\label{fig:weather_chain}
+\end{figure}
+
+\paragraph{Limite della catena di Markov.}
+Una catena di Markov modella bene processi in cui \emph{ciò che vediamo
+coincide con ciò che vogliamo modellare}. Ma in moltissimi problemi
+reali ciò che osserviamo è solo un \emph{effetto rumoroso} di uno stato
+sottostante che non vediamo direttamente:
+
+\begin{itemize}[leftmargin=*]
+    \item nel \emph{riconoscimento vocale} osserviamo onde acustiche,
+          ma vogliamo dedurre i fonemi pronunciati;
+    \item nel \emph{POS tagging} osserviamo parole, ma vogliamo
+          dedurre le parti del discorso;
+    \item in \emph{bioinformatica} osserviamo nucleotidi, ma cerchiamo
+          regioni codificanti vs non codificanti;
+    \item in \emph{finanza} osserviamo prezzi, ma sospettiamo regimi
+          di mercato latenti.
+\end{itemize}
+
+Per modellare questa dicotomia tra \emph{processo latente} e
+\emph{processo osservato} servono gli Hidden Markov Models, di cui ci
+occuperemo a partire dal prossimo capitolo.
+
+\section{Notazione e convenzioni adottate}
+
+Per garantire coerenza lungo tutte le dispense fissiamo qui le
+convenzioni che useremo \emph{senza eccezione}.
+
+\begin{tcolorbox}[notebox,title=Tabella di notazione (riferimento permanente)]
+\begin{tabular}{ll}
+\toprule
+\textbf{Simbolo} & \textbf{Significato} \\
+\midrule
+$\states=\{s_1,\dots,s_{\Nstates}\}$ & insieme finito degli stati nascosti\\
+$\Nstates$ & numero di stati \\
+$\obssym=\{v_1,\dots,v_{\Msym}\}$ & alfabeto delle osservazioni \\
+$\Msym$ & cardinalità dell'alfabeto \\
+$\Tlen$ & lunghezza della sequenza osservata \\
+$Q_t$ (v.a.) e $q_t$ (valore) & stato all'istante $t$ \\
+$O_t$ (v.a.) e $o_t$ (valore) & osservazione all'istante $t$ \\
+$\seqstates = (q_1,\dots,q_{\Tlen})$ & sequenza di stati \\
+$\seqobs = (o_1,\dots,o_{\Tlen})$ & sequenza di osservazioni \\
+$a_{ij} = \Prob(Q_{t+1}{=}s_j \given Q_t{=}s_i)$ & probabilità di transizione \\
+$b_j(k) = \Prob(O_t{=}v_k \given Q_t{=}s_j)$ & probabilità di emissione \\
+$\pi_i = \Prob(Q_1{=}s_i)$ & probabilità iniziale \\
+$\Amat=[a_{ij}]$ & matrice di transizione $\Nstates\times\Nstates$ \\
+$\Bmat=[b_j(k)]$ & matrice di emissione $\Nstates\times\Msym$ \\
+$\initvec=(\pi_i)$ & vettore distribuzione iniziale \\
+$\hmm = (\Amat,\Bmat,\initvec)$ & parametri completi dell'HMM \\
+$\fwd_t(i)$ & variabile forward \\
+$\bwd_t(i)$ & variabile backward \\
+$\vit_t(i)$ & variabile di Viterbi (massimo) \\
+$\gam_t(i)$, $\xig_t(i,j)$ & posterior marginali (Baum--Welch) \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+Manterremo questa notazione \emph{rigorosamente identica} fino
+all'ultimo capitolo, in modo che il lettore possa concentrarsi sui
+contenuti senza dover ``riscalibrare'' i simboli a ogni pagina.
+
+\section{Riepilogo del capitolo}
+
+\begin{tcolorbox}[insightbox,title=Takeaway -- Capitolo 1]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Probabilità condizionata e Bayes} sono gli strumenti
+          operativi di tutto il corso: ogni algoritmo HMM li applica
+          ripetutamente.
+    \item L'\textbf{indipendenza condizionata} è ciò che rende
+          trattabili modelli con moltissime variabili: senza di essa,
+          la joint avrebbe un numero esponenziale di parametri.
+    \item La \textbf{chain rule + proprietà di Markov} trasforma la
+          probabilità di una sequenza in un prodotto di fattori locali
+          --- esattamente la struttura che la programmazione dinamica
+          sfrutterà nei capitoli successivi.
+    \item Fissare la \textbf{notazione} fin dall'inizio evita
+          ambiguità: ogni simbolo ha un solo significato in tutto il
+          documento.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{osservazione}[Dalla catena di Markov all'HMM: il salto concettuale]
+La catena di Markov presuppone che ciò che osserviamo \emph{sia} lo
+stato del sistema. L'HMM rompe questa identificazione: lo stato è
+\emph{nascosto} e genera osservazioni in modo stocastico. Tutti gli
+algoritmi che studieremo nascono da questa separazione.
+\end{osservazione}
+
+% =====================================================================
+\chapter{Fondamenti degli Hidden Markov Models}
+\label{ch:fondamenti}
+% =====================================================================
+
+\section{Dall'osservato al nascosto: motivazione}
+
+Una catena di Markov assegna probabilità a sequenze di simboli che
+\emph{osserviamo direttamente}. Ma supponiamo di trovarci nella
+situazione seguente, ispirata a un classico esempio di Jason Eisner.
+
+\begin{esempio}[Il diario dei gelati]\label{ex:icecream_motiv}
+Siamo climatologi nel 2799 e vogliamo ricostruire il meteo di
+Baltimora dell'estate 2007. I dati meteo dell'epoca sono andati
+perduti, ma abbiamo il diario di Jason Eisner che, ogni sera, scriveva
+\emph{quanti gelati aveva mangiato} (1, 2 oppure 3).
+
+Sappiamo che Jason mangia più gelati nei giorni caldi, ma la
+relazione è probabilistica: anche in un giorno freddo può capitare
+che ne mangi due o tre, e viceversa.
+
+\textbf{Domanda:} osservando la sequenza dei gelati $\seqobs = (3,1,3)$,
+qual è stata la sequenza di temperature più probabile?
+\end{esempio}
+
+Cosa ci dice questo esempio? Che il fenomeno reale (il meteo) è
+\emph{nascosto} dietro una manifestazione osservabile (i gelati). Una
+catena di Markov sul meteo da sola non basta: dobbiamo collegare
+ciascuno stato meteo a una distribuzione di osservazioni. Esattamente
+questa è la struttura di un Hidden Markov Model.
+
+\section{Definizione informale}
+
+\begin{intuizione}
+Un \emph{Hidden Markov Model} è la composizione di due processi
+stocastici:
+\begin{enumerate}[leftmargin=*]
+    \item una \textbf{catena di Markov nascosta} $Q_1\to Q_2\to\dots
+          \to Q_{\Tlen}$ sugli stati;
+    \item un \textbf{processo di emissione} che, per ogni istante
+          $t$, genera una osservazione $O_t$ \emph{dipendente solo
+          dallo stato corrente} $Q_t$.
+\end{enumerate}
+L'osservatore esterno vede solo gli $O_t$; gli $Q_t$ sono ``hidden''.
+\end{intuizione}
+
+La struttura tipica si visualizza come un grafo \emph{trellis}:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,thick,node distance=1.6cm]
+  \tikzstyle{state}=[circle,draw,fill=blue!15,minimum size=10mm]
+  \tikzstyle{obs}=[rectangle,draw,fill=orange!15,minimum size=9mm]
+
+  \node[state] (q1) {$Q_1$};
+  \node[state, right=2cm of q1] (q2) {$Q_2$};
+  \node[state, right=2cm of q2] (q3) {$Q_3$};
+  \node[right=1.2cm of q3] (qdots) {$\cdots$};
+  \node[state, right=1.2cm of qdots] (qT) {$Q_{\Tlen}$};
+
+  \node[obs, below=of q1] (o1) {$O_1$};
+  \node[obs, below=of q2] (o2) {$O_2$};
+  \node[obs, below=of q3] (o3) {$O_3$};
+  \node[obs, below=of qT] (oT) {$O_{\Tlen}$};
+
+  \path (q1) edge node[above]{$a$} (q2)
+        (q2) edge node[above]{$a$} (q3)
+        (q3) edge (qdots)
+        (qdots) edge (qT)
+        (q1) edge node[left]{$b$} (o1)
+        (q2) edge node[left]{$b$} (o2)
+        (q3) edge node[left]{$b$} (o3)
+        (qT) edge node[left]{$b$} (oT);
+
+  \node[above=0.1cm of q1, font=\itshape] (lbl_h) {strato nascosto (Markov)};
+  \node[below=2.5cm of q1, font=\itshape, anchor=west] {strato osservato};
+\end{tikzpicture}
+\caption{Struttura grafica di un HMM. Gli archi orizzontali sono
+governati dalla matrice di transizione $\Amat$; gli archi verticali
+sono governati dalla matrice di emissione $\Bmat$. Le frecce rispettano
+le due assunzioni fondamentali (Markov + Output Independence).}
+\label{fig:hmm_trellis}
+\end{figure}
+
+\section{Definizione formale}
+
+\begin{definizione}[Hidden Markov Model]
+\label{def:hmm}
+Un \emph{Hidden Markov Model} discreto (HMM) è una tupla
+$\hmm = (\states, \obssym, \Amat, \Bmat, \initvec)$ dove:
+\begin{itemize}[leftmargin=*]
+    \item $\states=\{s_1,\dots,s_{\Nstates}\}$ è l'insieme finito degli
+          \textbf{stati nascosti};
+    \item $\obssym=\{v_1,\dots,v_{\Msym}\}$ è l'alfabeto delle
+          \textbf{osservazioni};
+    \item $\Amat\in\R^{\Nstates\times\Nstates}$, $\Amat=[a_{ij}]$, è
+          la \textbf{matrice di transizione} con
+          $a_{ij}=\Prob(Q_{t+1}=s_j\given Q_t=s_i)$ e
+          $\sum_j a_{ij}=1$, $a_{ij}\ge 0$;
+    \item $\Bmat\in\R^{\Nstates\times\Msym}$, $\Bmat=[b_j(k)]$, è la
+          \textbf{matrice di emissione} con
+          $b_j(k)=\Prob(O_t=v_k\given Q_t=s_j)$ e $\sum_k b_j(k)=1$,
+          $b_j(k)\ge 0$;
+    \item $\initvec=(\pi_1,\dots,\pi_{\Nstates})$ è la
+          \textbf{distribuzione iniziale} con $\pi_i=\Prob(Q_1=s_i)$
+          e $\sum_i \pi_i=1$.
+\end{itemize}
+\end{definizione}
+
+I parametri si presentano spesso compattamente come $\hmm=(\Amat,\Bmat,
+\initvec)$. Quando una sola distribuzione, $\initvec$, è coinvolta nello
+``stato iniziale'', alcuni autori preferiscono un \emph{nodo di start}
+fittizio: le due rappresentazioni sono equivalenti.
+
+\section{Le due assunzioni fondamentali}
+
+L'intera teoria degli HMM si regge su due assunzioni che vanno
+comprese a fondo perché ne sfrutteremo le conseguenze ovunque.
+
+\begin{tcolorbox}[insightbox,title=Assunzione 1 -- Proprietà di Markov del primo ordine]
+La probabilità dello stato all'istante $t$ dipende solo dallo stato
+all'istante $t-1$:
+\begin{equation}
+    \Prob(Q_t \given Q_{1:t-1}, O_{1:t-1}) = \Prob(Q_t \given Q_{t-1}).
+    \label{eq:markov_assumption}
+\end{equation}
+\end{tcolorbox}
+
+\begin{tcolorbox}[insightbox,title=Assunzione 2 -- Output Independence]
+L'osservazione all'istante $t$ dipende solo dallo stato all'istante
+$t$, e non dagli stati passati né dalle osservazioni passate o future:
+\begin{equation}
+    \Prob(O_t \given Q_{1:\Tlen}, O_{1:t-1}, O_{t+1:\Tlen})
+    = \Prob(O_t \given Q_t).
+    \label{eq:output_independence}
+\end{equation}
+\end{tcolorbox}
+
+Notazione: scriviamo $X_{1:t}$ per $(X_1,X_2,\dots,X_t)$.
+
+Queste due assunzioni hanno una rappresentazione grafica ovvia in
+Figura~\ref{fig:hmm_trellis}: ogni nodo $Q_t$ ha come unico ``genitore''
+nella catena $Q_{t-1}$, e ogni nodo $O_t$ ha come unico genitore $Q_t$.
+
+\begin{osservazione}[Sono assunzioni \emph{forti}]
+Queste due ipotesi sono semplificazioni potenti che permettono
+algoritmi efficienti, ma sono evidentemente \emph{false} in molti
+contesti reali. Per esempio nel parlato la dipendenza fonetica si
+estende su molti frame; nel linguaggio naturale ci sono dipendenze
+sintattiche a lungo raggio. La forza degli HMM è che, nonostante le
+loro semplificazioni, funzionano \emph{sorprendentemente bene} in
+pratica; la loro evoluzione (CRF, RNN, Transformer) consiste in gran
+parte nel rilassare progressivamente queste assunzioni.
+\end{osservazione}
+
+\section{Probabilità congiunta di una sequenza completa}
+
+Mettiamo subito al lavoro le due assunzioni. Vogliamo l'espressione
+analitica di $\Prob(\seqobs,\seqstates\given \hmm)$, cioè la
+probabilità congiunta di osservare $\seqobs=(o_1,\dots,o_{\Tlen})$
+\emph{e} che il sistema abbia attraversato la traiettoria
+$\seqstates=(q_1,\dots,q_{\Tlen})$.
+
+Partiamo dalla regola del prodotto:
+\begin{equation}
+    \Prob(\seqobs,\seqstates\given\hmm)
+    = \Prob(\seqobs\given\seqstates,\hmm)\cdot\Prob(\seqstates\given\hmm).
+\end{equation}
+
+\paragraph{Primo fattore.} Applicando ripetutamente la chain rule e
+l'\emph{output independence}:
+\begin{align}
+    \Prob(\seqobs\given\seqstates,\hmm)
+    &= \prod_{t=1}^{\Tlen} \Prob(O_t=o_t\given \seqstates, O_{1:t-1},\hmm)\\
+    &= \prod_{t=1}^{\Tlen} \Prob(O_t=o_t\given Q_t=q_t,\hmm)
+    = \prod_{t=1}^{\Tlen} b_{q_t}(o_t).
+\end{align}
+
+\paragraph{Secondo fattore.} Per la Markov property:
+\begin{align}
+    \Prob(\seqstates\given\hmm)
+    &= \pi_{q_1}\prod_{t=2}^{\Tlen} a_{q_{t-1},q_t}.
+\end{align}
+
+Combinando:
+\begin{empheq}[box=\fbox]{align}
+    \Prob(\seqobs,\seqstates\given\hmm) =
+    \pi_{q_1}\,b_{q_1}(o_1)
+    \prod_{t=2}^{\Tlen} a_{q_{t-1},q_t}\,b_{q_t}(o_t).
+    \label{eq:joint}
+\end{empheq}
+
+Questa è la \emph{formula generativa} dell'HMM. È la base di tutto
+ciò che seguirà.
+
+\section{Esempio guida: HMM del gelato}\label{sec:icecream_hmm}
+
+Formalizziamo l'Esempio~\ref{ex:icecream_motiv}. Definiamo
+\begin{itemize}[leftmargin=*]
+    \item $\states=\{H,C\}$ (\emph{Hot}, \emph{Cold});
+    \item $\obssym=\{1,2,3\}$ (numero di gelati);
+    \item parametri (scelti, in modo plausibile, come nel testo di
+          Jurafsky--Martin):
+\end{itemize}
+\[
+\Amat = \begin{pmatrix} 0.6 & 0.3 \\ 0.4 & 0.5 \end{pmatrix}
+\quad\text{(righe: stato corrente)},\qquad
+\initvec = (0.8, 0.2)
+\]
+\[
+\Bmat = \begin{pmatrix}
+b_H(1)=0.2 & b_H(2)=0.4 & b_H(3)=0.4\\
+b_C(1)=0.5 & b_C(2)=0.4 & b_C(3)=0.1
+\end{pmatrix}
+\]
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,auto,node distance=4cm,thick]
+  \node[state, fill=red!20] (H) {Hot};
+  \node[state, fill=blue!20, right=of H] (C) {Cold};
+
+  \path (H) edge[loop above] node{0.6} (H)
+        (H) edge[bend left] node{0.3} (C)
+        (C) edge[bend left] node{0.4} (H)
+        (C) edge[loop above] node{0.5} (C);
+
+  \node[below=1cm of H, font=\footnotesize, align=center] (bH)
+    {$P(1{\mid}H){=}0.2$\\$P(2{\mid}H){=}0.4$\\$P(3{\mid}H){=}0.4$};
+  \node[below=1cm of C, font=\footnotesize, align=center] (bC)
+    {$P(1{\mid}C){=}0.5$\\$P(2{\mid}C){=}0.4$\\$P(3{\mid}C){=}0.1$};
+
+  \draw[dashed,->] (H) -- (bH);
+  \draw[dashed,->] (C) -- (bC);
+\end{tikzpicture}
+\caption{HMM del gelato. Le frecce piene sono transizioni (matrice
+$\Amat$); i riquadri sotto i nodi mostrano le distribuzioni di
+emissione (matrice $\Bmat$). Le probabilità iniziali sono $\pi_H=0.8$,
+$\pi_C=0.2$.}
+\label{fig:icecream_hmm}
+\end{figure}
+
+\begin{esempio}[Calcolo manuale di una probabilità congiunta]
+\label{ex:joint_manual}
+Calcoliamo la probabilità che la sequenza di osservazioni sia
+$\seqobs=(3,1,3)$ \emph{e} che la traiettoria nascosta sia
+$\seqstates=(H,H,C)$:
+\begin{align*}
+\Prob((3,1,3),(H,H,C)\given\hmm)
+&= \pi_H\,b_H(3)\,a_{HH}\,b_H(1)\,a_{HC}\,b_C(3)\\
+&= 0.8 \cdot 0.4 \cdot 0.6 \cdot 0.2 \cdot 0.3 \cdot 0.1\\
+&= 0.001152.
+\end{align*}
+\end{esempio}
+
+Questo numero, per quanto piccolo, è il primo passo concreto verso
+tutta la teoria.
+
+\section{Topologie tipiche}
+
+Non ogni HMM ammette transizioni tra qualsiasi coppia di stati. A
+seconda dell'applicazione si scelgono \emph{topologie} diverse della
+matrice $\Amat$:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Ergodica (fully connected):} $a_{ij}>0$ per ogni
+          $i,j$. Adatta quando ogni stato può seguire qualunque altro
+          (es. regimi di mercato).
+    \item \textbf{Left-to-right (Bakis):} $a_{ij}=0$ se $j<i$, e
+          tipicamente $a_{ij}=0$ se $j>i+\Delta$. La traiettoria
+          avanza solo da sinistra a destra. Usata in \emph{speech
+          recognition} dove le unità fonetiche procedono nel tempo.
+    \item \textbf{Parallel paths:} variante a più rami, utile per
+          modellare pronunce alternative.
+\end{itemize}
+
+\begin{figure}[h!]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\centering
+\begin{tikzpicture}[->,>=Stealth,node distance=1.4cm,thick]
+  \tikzstyle{s}=[circle,draw,fill=blue!15,minimum size=8mm]
+  \node[s] (1) {1}; \node[s,right=of 1] (2) {2};
+  \node[s,right=of 2] (3) {3}; \node[s,right=of 3] (4) {4};
+  \path (1) edge[loop above](1)
+        (2) edge[loop above](2)
+        (3) edge[loop above](3)
+        (4) edge[loop above](4)
+        (1) edge (2) (2) edge (3) (3) edge (4)
+        (1) edge[bend left=40] (3) (2) edge[bend left=40] (4);
+\end{tikzpicture}
+\caption{Left-to-right (Bakis), $\Delta=2$.}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.45\textwidth}
+\centering
+\begin{tikzpicture}[->,>=Stealth,node distance=1.8cm,thick]
+  \tikzstyle{s}=[circle,draw,fill=green!15,minimum size=8mm]
+  \node[s] (1) {1};
+  \node[s,right=of 1] (2) {2};
+  \node[s,below=of 1] (3) {3};
+  \node[s,below=of 2] (4) {4};
+  \foreach \i in {1,2,3,4} { \path (\i) edge[loop above] (\i); }
+  \foreach \i in {1,2,3,4} \foreach \j in {1,2,3,4} {
+      \ifnum\i=\j\else \path (\i) edge[bend left=8] (\j); \fi
+  }
+\end{tikzpicture}
+\caption{Ergodica, 4 stati.}
+\end{subfigure}
+\caption{Due topologie tipiche di HMM.}
+\label{fig:topologies}
+\end{figure}
+
+\section{Generazione di sequenze da un HMM}
+
+Un HMM è anzitutto un \emph{modello generativo}: data $\hmm$ si
+possono \emph{simulare} sequenze. La procedura, ricetta utilissima
+per testare implementazioni, è quella nota come \emph{probabilistic
+logic sampling} di Henrion:
+
+\begin{algorithm}[H]
+\caption{Generazione di una sequenza da un HMM}
+\label{alg:hmm_generate}
+\begin{algorithmic}[1]
+\Require Parametri $\hmm=(\Amat,\Bmat,\initvec)$, lunghezza $\Tlen$.
+\Ensure Sequenza $(\seqstates,\seqobs)$.
+\State Estrai $q_1 \sim \initvec$ \Comment{stato iniziale}
+\State Estrai $o_1 \sim b_{q_1}(\cdot)$ \Comment{prima osservazione}
+\For{$t = 2$ \textbf{to} $\Tlen$}
+    \State Estrai $q_t \sim a_{q_{t-1},\cdot}$ \Comment{transizione}
+    \State Estrai $o_t \sim b_{q_t}(\cdot)$ \Comment{emissione}
+\EndFor
+\State \Return $(\seqstates,\seqobs)$
+\end{algorithmic}
+\end{algorithm}
+
+Questo algoritmo è la versione \emph{forward} delle Bayesian Networks
+discussa da Pearl: gli stati si campionano in ordine topologico
+(parents-before-children) e ogni emissione segue immediatamente lo
+stato di cui dipende. Nell'HMM la topologia è particolarmente
+semplice e l'algoritmo si riduce all'iterazione mostrata.
+
+\section{I tre problemi fondamentali (anteprima)}
+
+Una volta definito l'HMM, Rabiner (1989), basandosi sulle lezioni di
+Jack Ferguson, codificò in tre problemi tutto ciò che si vuole fare
+con un HMM. La nostra trattazione successiva è costruita attorno a
+questo schema.
+
+\begin{tcolorbox}[notebox,title=I tre problemi fondamentali degli HMM]
+\begin{description}[leftmargin=*,style=nextline]
+    \item[Problema 1 -- Evaluation (likelihood):]
+    dato $\hmm$ e una sequenza di osservazioni $\seqobs$,
+    calcolare $\Prob(\seqobs\given\hmm)$.\\
+    \emph{Algoritmo: Forward (e Backward).}
+    \item[Problema 2 -- Decoding:]
+    dato $\hmm$ e $\seqobs$, trovare la sequenza nascosta $\seqstates^*$
+    più probabile (\emph{Most Probable Path}).\\
+    \emph{Algoritmo: Viterbi.}
+    \item[Problema 3 -- Learning:]
+    dato un insieme di sequenze osservate, stimare i parametri
+    $\hmm=(\Amat,\Bmat,\initvec)$ che massimizzano la verosimiglianza
+    dei dati.\\
+    \emph{Algoritmo: Baum--Welch (EM).}
+\end{description}
+\end{tcolorbox}
+
+Ciascuno di questi problemi sarà oggetto di un capitolo dedicato.
+
+\section{Riepilogo del capitolo}
+
+\begin{tcolorbox}[insightbox,title=Takeaway -- Capitolo 2]
+\begin{enumerate}[leftmargin=*]
+    \item Un HMM è completamente specificato dalla tupla
+          $\hmm=(\Amat,\Bmat,\initvec)$: tre oggetti numerici che
+          codificano \emph{dinamica}, \emph{emissione} e
+          \emph{condizione iniziale}.
+    \item Le \textbf{due assunzioni} (Markov del primo ordine +
+          Output Independence) sono la ragione per cui gli algoritmi
+          hanno costo polinomiale: senza di esse, il modello sarebbe
+          intrattabile.
+    \item La \textbf{formula generativa} \eqref{eq:joint} è il punto
+          di partenza di \emph{ogni} derivazione successiva: Forward,
+          Viterbi e Baum--Welch ne sono manipolazioni algebriche.
+    \item La \textbf{topologia} della matrice $\Amat$ (ergodica,
+          left-to-right, ecc.) impone vincoli strutturali che riducono
+          i parametri liberi e incorporano conoscenza del dominio.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{osservazione}[Modello generativo vs inferenza]
+L'HMM è definito come modello \emph{generativo}: descrive come la
+natura ``produce'' le osservazioni. Ma in pratica lo usiamo quasi
+sempre al contrario (\emph{inferenza}): date le osservazioni, risaliamo
+agli stati nascosti. Questa asimmetria tra definizione e utilizzo è il
+cuore dei tre problemi fondamentali.
+\end{osservazione}
+
+% =====================================================================
+\chapter{Il problema dell'Evaluation: l'algoritmo Forward}
+\label{ch:forward}
+% =====================================================================
+
+\section{Posizione del problema}
+
+\begin{tcolorbox}[notebox,title=Problema 1 -- Evaluation]
+Dati $\hmm=(\Amat,\Bmat,\initvec)$ e una sequenza di osservazioni
+$\seqobs=(o_1,\dots,o_{\Tlen})$, calcolare
+\[
+    \Prob(\seqobs\given\hmm)
+    \;=\; \sum_{\seqstates}\Prob(\seqobs,\seqstates\given\hmm).
+\]
+\end{tcolorbox}
+
+L'interpretazione è duplice. Da un lato è la \emph{verosimiglianza}
+dei dati sotto il modello, utile per confrontare diversi HMM (es.\
+nel riconoscimento vocale ogni parola ha il suo HMM e si sceglie
+quello con likelihood massima sulla sequenza acustica). Dall'altro è
+il \emph{normalizzatore} che compare in molte altre formule (Viterbi
+e Baum--Welch).
+
+\section{Approccio ingenuo: enumerazione delle traiettorie}
+
+L'idea istintiva è di applicare la \eqref{eq:joint} a tutte le possibili
+sequenze nascoste $\seqstates$ e sommare:
+\begin{equation}
+    \Prob(\seqobs\given\hmm)
+    = \sum_{\seqstates\in\states^{\Tlen}}
+      \pi_{q_1}\,b_{q_1}(o_1)\prod_{t=2}^{\Tlen} a_{q_{t-1},q_t}\,b_{q_t}(o_t).
+    \label{eq:naive_evaluation}
+\end{equation}
+
+\paragraph{Costo.} Lo spazio delle traiettorie nascoste ha cardinalità
+$\Nstates^{\Tlen}$. Ogni traiettoria richiede $\mathcal{O}(\Tlen)$
+moltiplicazioni. Costo totale:
+\[
+    \mathcal{O}(\Tlen\cdot\Nstates^{\Tlen}).
+\]
+Per $\Nstates=5$ stati e $\Tlen=100$ osservazioni:
+$2\cdot 100\cdot 5^{100} \approx 10^{72}$ operazioni. Computazionalmente
+impossibile. Serve un'idea migliore.
+
+\section{La chiave: programmazione dinamica sul trellis}
+
+\begin{intuizione}
+Molte delle $\Nstates^{\Tlen}$ traiettorie condividono \emph{prefissi}.
+Il calcolo della loro probabilità ripete inutilmente le stesse
+moltiplicazioni. La programmazione dinamica fattorizza questa
+ridondanza riutilizzando i risultati intermedi.
+\end{intuizione}
+
+\begin{definizione}[Variabile forward]
+\label{def:forward}
+Per $1\le t\le \Tlen$ e $1\le i\le \Nstates$ definiamo
+\begin{equation}
+    \fwd_t(i) \;\triangleq\; \Prob(O_1=o_1,\dots,O_t=o_t,\, Q_t=s_i \given \hmm).
+    \label{eq:fwd_def}
+\end{equation}
+È la probabilità \emph{congiunta} di aver osservato il prefisso
+$o_1,\dots,o_t$ \emph{e} di trovarsi nello stato $s_i$ all'istante $t$.
+\end{definizione}
+
+\section{Derivazione della ricorsione Forward}
+
+L'eleganza dell'algoritmo è racchiusa in una sola ricorsione. La
+deriviamo passo a passo.
+
+\paragraph{Passo iniziale ($t=1$).} Per definizione,
+\begin{equation}
+    \fwd_1(i) = \Prob(O_1=o_1, Q_1=s_i\given\hmm)
+    = \pi_i\, b_i(o_1), \qquad 1\le i \le \Nstates.
+    \label{eq:fwd_init}
+\end{equation}
+
+\paragraph{Passo induttivo.} Vogliamo $\fwd_{t+1}(j)$. Marginalizziamo
+sullo stato precedente $Q_t$:
+\begin{align}
+\fwd_{t+1}(j)
+&= \Prob(o_{1:t+1},\,Q_{t+1}=s_j\given\hmm) \notag\\
+&= \sum_{i=1}^{\Nstates} \Prob(o_{1:t+1},\,Q_t=s_i,\,Q_{t+1}=s_j\given\hmm).
+\end{align}
+
+Per la chain rule:
+\begin{equation}
+\Prob(o_{1:t+1},Q_t=s_i,Q_{t+1}=s_j)
+= \underbrace{\Prob(o_{1:t},Q_t=s_i)}_{\fwd_t(i)}
+  \cdot\Prob(Q_{t+1}=s_j\given\dots)
+  \cdot\Prob(O_{t+1}=o_{t+1}\given\dots).
+\end{equation}
+
+Sfruttando le assunzioni di Markov \eqref{eq:markov_assumption} e di
+Output Independence \eqref{eq:output_independence}:
+\[
+\Prob(Q_{t+1}=s_j\given\dots) = a_{ij},\qquad
+\Prob(O_{t+1}=o_{t+1}\given\dots) = b_j(o_{t+1}).
+\]
+
+Sostituendo otteniamo la \textbf{ricorsione Forward}:
+\begin{empheq}[box=\fbox]{equation}
+\fwd_{t+1}(j) \;=\; \biggl[\sum_{i=1}^{\Nstates} \fwd_t(i)\,a_{ij}\biggr]
+                     \,b_j(o_{t+1}),
+\quad 1\le j\le\Nstates,\;\; 1\le t\le\Tlen-1.
+\label{eq:fwd_recursion}
+\end{empheq}
+
+\paragraph{Terminazione.} La probabilità totale si ottiene marginalizzando
+sullo stato finale:
+\begin{equation}
+\Prob(\seqobs\given\hmm)
+= \sum_{i=1}^{\Nstates} \Prob(o_{1:\Tlen},Q_{\Tlen}=s_i\given\hmm)
+= \sum_{i=1}^{\Nstates} \fwd_{\Tlen}(i).
+\label{eq:fwd_termination}
+\end{equation}
+
+\begin{tcolorbox}[insightbox,title=Interpretazione dei tre fattori]
+La ricorsione \eqref{eq:fwd_recursion} ha una struttura modulare che
+ritroveremo in ogni algoritmo HMM. Per estendere una probabilità da
+$t$ a $t+1$:
+\begin{enumerate}[leftmargin=*]
+    \item $\fwd_t(i)$: probabilità \emph{accumulata} fino al tempo $t$
+          nello stato $i$;
+    \item $a_{ij}$: \emph{transizione} da $i$ a $j$;
+    \item $b_j(o_{t+1})$: \emph{emissione} della prossima osservazione
+          dato il nuovo stato.
+\end{enumerate}
+La somma su $i$ ``unisce'' tutti i percorsi che convergono nello stato
+$j$.
+\end{tcolorbox}
+
+\section{Pseudocodice}
+
+\begin{algorithm}[H]
+\caption{Algoritmo Forward}
+\label{alg:forward}
+\begin{algorithmic}[1]
+\Require $\hmm=(\Amat,\Bmat,\initvec)$, $\seqobs=(o_1,\dots,o_{\Tlen})$.
+\Ensure $\Prob(\seqobs\given\hmm)$.
+\State \textbf{Inizializzazione:}
+\For{$i = 1$ \textbf{to} $\Nstates$}
+    \State $\fwd_1(i) \gets \pi_i\,b_i(o_1)$
+\EndFor
+\State \textbf{Induzione:}
+\For{$t = 1$ \textbf{to} $\Tlen-1$}
+    \For{$j = 1$ \textbf{to} $\Nstates$}
+        \State $\fwd_{t+1}(j) \gets \Bigl[\sum_{i=1}^{\Nstates} \fwd_t(i)\,a_{ij}\Bigr]\, b_j(o_{t+1})$
+    \EndFor
+\EndFor
+\State \textbf{Terminazione:}
+\State $P \gets \sum_{i=1}^{\Nstates} \fwd_{\Tlen}(i)$
+\State \Return $P$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Complessità.} Ad ogni passo $t$ si calcolano $\Nstates$
+valori $\fwd_{t+1}(j)$, ciascuno costato $\mathcal{O}(\Nstates)$. Costo
+totale:
+\[
+    \mathcal{O}(\Nstates^2 \cdot \Tlen).
+\]
+Per $\Nstates=5, \Tlen=100$: circa $2{,}500$ operazioni invece di
+$10^{72}$. Il guadagno è di settanta ordini di grandezza, ottenuto
+solo riorganizzando il calcolo.
+
+\section{Visualizzazione: il trellis di programmazione dinamica}
+
+Le variabili $\fwd_t(i)$ si dispongono naturalmente su una griglia
+(\emph{trellis}) con $\Tlen$ colonne e $\Nstates$ righe:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,thick]
+  \foreach \t in {1,2,3,4} {
+    \node[circle,draw,fill=red!15,minimum size=8mm] (H\t) at (1.8*\t,1.5) {$H$};
+    \node[circle,draw,fill=blue!15,minimum size=8mm] (C\t) at (1.8*\t,0) {$C$};
+    \node[font=\small] at (1.8*\t,-1) {$t{=}\t$};
+  }
+  \foreach \t in {1,2,3} {
+    \pgfmathtruncatemacro{\tnext}{\t+1}
+    \draw[->,blue!50] (H\t) -- (H\tnext);
+    \draw[->,blue!50] (H\t) -- (C\tnext);
+    \draw[->,blue!50] (C\t) -- (H\tnext);
+    \draw[->,blue!50] (C\t) -- (C\tnext);
+  }
+  \node[left=0.3cm of H1, font=\small] {Hot};
+  \node[left=0.3cm of C1, font=\small] {Cold};
+
+  \node[below=1cm of C1] (o1) {$o_1$};
+  \node[below=1cm of C2] (o2) {$o_2$};
+  \node[below=1cm of C3] (o3) {$o_3$};
+  \node[below=1cm of C4] (o4) {$o_4$};
+\end{tikzpicture}
+\caption{Trellis del Forward per $\Nstates=2$ stati e $\Tlen=4$. Ogni
+cella $\fwd_t(i)$ riceve contributi da tutte le celle della colonna
+precedente, pesati per la transizione e per l'emissione.}
+\label{fig:fwd_trellis}
+\end{figure}
+
+\section{Esempio passo-passo: HMM del gelato}\label{sec:fwd_example}
+
+Riprendiamo l'HMM di Sezione~\ref{sec:icecream_hmm} e calcoliamo
+$\Prob(\seqobs\given\hmm)$ per $\seqobs=(3,1,3)$.
+
+\paragraph{$t=1$ (osservazione $o_1=3$).}
+\begin{align*}
+\fwd_1(H) &= \pi_H\,b_H(3) = 0.8\cdot 0.4 = 0.32,\\
+\fwd_1(C) &= \pi_C\,b_C(3) = 0.2\cdot 0.1 = 0.02.
+\end{align*}
+
+\paragraph{$t=2$ (osservazione $o_2=1$).}
+\begin{align*}
+\fwd_2(H) &= [\fwd_1(H)\,a_{HH} + \fwd_1(C)\,a_{CH}]\,b_H(1)\\
+          &= [0.32\cdot 0.6 + 0.02\cdot 0.4]\cdot 0.2
+           = [0.192 + 0.008]\cdot 0.2 = 0.0400.\\
+\fwd_2(C) &= [\fwd_1(H)\,a_{HC} + \fwd_1(C)\,a_{CC}]\,b_C(1)\\
+          &= [0.32\cdot 0.3 + 0.02\cdot 0.5]\cdot 0.5
+           = [0.096 + 0.010]\cdot 0.5 = 0.0530.
+\end{align*}
+
+\paragraph{$t=3$ (osservazione $o_3=3$).}
+\begin{align*}
+\fwd_3(H) &= [0.0400\cdot 0.6 + 0.0530\cdot 0.4]\cdot 0.4
+           = [0.0240+0.0212]\cdot 0.4 = 0.018080.\\
+\fwd_3(C) &= [0.0400\cdot 0.3 + 0.0530\cdot 0.5]\cdot 0.1
+           = [0.0120+0.0265]\cdot 0.1 = 0.003850.
+\end{align*}
+
+\paragraph{Terminazione.}
+\[
+\Prob((3,1,3)\given\hmm) = \fwd_3(H) + \fwd_3(C)
+                         = 0.018080 + 0.003850 = 0.02193.
+\]
+
+Una verifica utile: somma su tutte le $2^3=8$ traiettorie con la
+\eqref{eq:naive_evaluation} darebbe lo stesso risultato (ma con 8
+moltiplicazioni totali di 5 fattori, contro i $4\cdot\Nstates^2=16$
+del Forward; in generale, però, l'esponenziale batte sempre il
+quadratico).
+
+\section{La controparte: variabile Backward}\label{sec:backward}
+
+La logica del Forward si può applicare partendo dall'\emph{altro
+estremo} della sequenza, ottenendo una variabile simmetrica che ci
+servirà nel capitolo sull'apprendimento.
+
+\begin{definizione}[Variabile backward]
+\label{def:backward}
+\begin{equation}
+    \bwd_t(i) \;\triangleq\; \Prob(O_{t+1}=o_{t+1},\dots,O_{\Tlen}=o_{\Tlen}
+                                  \given Q_t=s_i,\hmm).
+    \label{eq:bwd_def}
+\end{equation}
+Probabilità di osservare il \emph{suffisso} $o_{t+1},\dots,o_{\Tlen}$
+\emph{dato} che al tempo $t$ ci troviamo nello stato $s_i$.
+\end{definizione}
+
+\paragraph{Ricorsione backward.} Procediamo \emph{a ritroso} nel
+tempo. Per $t=\Tlen$ non c'è alcun suffisso, quindi
+\begin{equation}
+\bwd_{\Tlen}(i) = 1, \quad 1\le i\le\Nstates.
+\label{eq:bwd_init}
+\end{equation}
+
+Per $t<\Tlen$, marginalizziamo sullo stato successivo:
+\begin{empheq}[box=\fbox]{equation}
+\bwd_t(i) \;=\; \sum_{j=1}^{\Nstates} a_{ij}\,b_j(o_{t+1})\,\bwd_{t+1}(j),
+\quad 1\le i\le\Nstates,\;\; t=\Tlen-1,\Tlen-2,\dots,1.
+\label{eq:bwd_recursion}
+\end{empheq}
+
+\paragraph{Verifica.} La probabilità totale può essere ricalcolata
+dal backward:
+\begin{equation}
+\Prob(\seqobs\given\hmm) = \sum_{i=1}^{\Nstates}\pi_i\,b_i(o_1)\,\bwd_1(i).
+\label{eq:bwd_termination}
+\end{equation}
+Le \eqref{eq:fwd_termination} e \eqref{eq:bwd_termination} sono solo
+due modi diversi di calcolare lo stesso numero, e ciò fornisce un
+ottimo \emph{sanity check} numerico.
+
+\begin{algorithm}[H]
+\caption{Algoritmo Backward}
+\label{alg:backward}
+\begin{algorithmic}[1]
+\Require $\hmm$, $\seqobs$.
+\Ensure $\{\bwd_t(i)\}$ e $\Prob(\seqobs\given\hmm)$.
+\For{$i=1$ \textbf{to} $\Nstates$}
+    \State $\bwd_{\Tlen}(i) \gets 1$
+\EndFor
+\For{$t=\Tlen-1$ \textbf{down to} $1$}
+    \For{$i=1$ \textbf{to} $\Nstates$}
+        \State $\bwd_t(i) \gets \sum_{j=1}^{\Nstates} a_{ij}\,b_j(o_{t+1})\,\bwd_{t+1}(j)$
+    \EndFor
+\EndFor
+\State \Return $\sum_{i=1}^{\Nstates}\pi_i\,b_i(o_1)\,\bwd_1(i)$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Una relazione potente: \texorpdfstring{$\fwd_t(i)\bwd_t(i)$}{forward x backward}}
+
+Combinando le due variabili otteniamo un'identità fondamentale, che
+sarà la chiave del Baum--Welch.
+
+\begin{proposizione}\label{prop:fwdbwd}
+Per ogni $1\le t\le \Tlen$ e $1\le i\le \Nstates$:
+\begin{equation}
+    \fwd_t(i)\,\bwd_t(i)
+    = \Prob(\seqobs,\,Q_t=s_i\given\hmm).
+\end{equation}
+Di conseguenza, per ogni $t$,
+\begin{equation}
+    \Prob(\seqobs\given\hmm) = \sum_{i=1}^{\Nstates}\fwd_t(i)\,\bwd_t(i).
+    \label{eq:fwdbwd_total}
+\end{equation}
+\end{proposizione}
+
+\begin{proof}
+Per definizione,
+\begin{align*}
+\fwd_t(i)\bwd_t(i)
+&= \Prob(o_{1:t},Q_t=s_i\given\hmm)\cdot\Prob(o_{t+1:\Tlen}\given Q_t=s_i,\hmm)\\
+&\stackrel{(*)}{=} \Prob(o_{1:t},Q_t=s_i\given\hmm)\cdot
+                   \Prob(o_{t+1:\Tlen}\given o_{1:t},Q_t=s_i,\hmm)\\
+&= \Prob(\seqobs,Q_t=s_i\given\hmm),
+\end{align*}
+dove in $(*)$ abbiamo usato l'indipendenza condizionata: dato $Q_t$,
+le osservazioni future sono indipendenti da quelle passate. La
+\eqref{eq:fwdbwd_total} segue marginalizzando su $i$.
+\end{proof}
+
+Memorizzate questa identità: ne useremo varianti in tutto il
+Capitolo~\ref{ch:baumwelch}.
+
+\section{Implementazione Python concettuale}
+
+Per fissare le idee, ecco un'implementazione minima ma corretta.
+
+\begin{lstlisting}[caption={Forward e Backward in NumPy.}, label={lst:fwd_bwd}]
+import numpy as np
+
+def forward(A, B, pi, obs):
+    """
+    A:   matrice di transizione (N x N)
+    B:   matrice di emissione   (N x M)
+    pi:  distribuzione iniziale (N,)
+    obs: sequenza di osservazioni come indici interi (T,)
+    Ritorna: matrice alpha (T x N) e P(obs).
+    """
+    N = A.shape[0]
+    T = len(obs)
+    alpha = np.zeros((T, N))
+    # Inizializzazione
+    alpha[0] = pi * B[:, obs[0]]
+    # Induzione
+    for t in range(1, T):
+        # alpha[t, j] = (sum_i alpha[t-1, i] * A[i, j]) * B[j, obs[t]]
+        alpha[t] = (alpha[t-1] @ A) * B[:, obs[t]]
+    # Terminazione
+    prob = alpha[-1].sum()
+    return alpha, prob
+
+def backward(A, B, pi, obs):
+    N = A.shape[0]
+    T = len(obs)
+    beta = np.zeros((T, N))
+    beta[-1] = 1.0                       # condizione finale
+    for t in range(T-2, -1, -1):
+        # beta[t, i] = sum_j A[i,j] * B[j, obs[t+1]] * beta[t+1, j]
+        beta[t] = A @ (B[:, obs[t+1]] * beta[t+1])
+    prob = (pi * B[:, obs[0]] * beta[0]).sum()
+    return beta, prob
+\end{lstlisting}
+
+Con i parametri del nostro esempio:
+
+\begin{lstlisting}[caption={Test sull'HMM del gelato.}]
+A  = np.array([[0.6, 0.3],
+               [0.4, 0.5]])
+# Nota: nella nostra A, l'ultima colonna NON e' garantita a somma 1
+# perche' ammettiamo uno "stato finale" implicito; per il forward
+# standard usiamo trasm. stocastiche. Riscaliamo se necessario.
+A  = A / A.sum(axis=1, keepdims=True)
+B  = np.array([[0.2, 0.4, 0.4],     # P(o|H)
+               [0.5, 0.4, 0.1]])    # P(o|C)
+pi = np.array([0.8, 0.2])
+obs = [2, 0, 2]   # codifica: 1->0, 2->1, 3->2
+
+alpha, p_fwd = forward(A, B, pi, obs)
+beta,  p_bwd = backward(A, B, pi, obs)
+print(p_fwd, p_bwd)   # devono coincidere
+\end{lstlisting}
+
+\begin{osservazione}[Aritmetica e underflow]
+I valori $\fwd_t(i)$ tendono a numeri molto piccoli, perché ogni
+moltiplicazione li riduce. Per $\Tlen$ grande l'aritmetica in doppia
+precisione può andare in underflow. Vedremo in
+Capitolo~\ref{ch:stabilita} le tecniche di \emph{scaling} e di passaggio
+ai logaritmi.
+\end{osservazione}
+
+\section{Riepilogo del capitolo}
+
+\begin{itemize}[leftmargin=*]
+    \item L'evaluation di $\Prob(\seqobs\given\hmm)$ è risolto dalla
+          programmazione dinamica con costo $\mathcal{O}(\Nstates^2\Tlen)$.
+    \item La variabile chiave è il \emph{forward} $\fwd_t(i)$, definito
+          come probabilità congiunta del prefisso e dello stato corrente.
+    \item Il \emph{backward} $\bwd_t(i)$ è il duale temporale del forward
+          e ci permetterà di calcolare le posterior $\Prob(Q_t\given\seqobs)$.
+    \item L'identità $\fwd_t(i)\bwd_t(i)=\Prob(\seqobs,Q_t=s_i)$ è il
+          ponte verso l'apprendimento.
+\end{itemize}
+
+\begin{tcolorbox}[insightbox,title=Takeaway -- Capitolo 3]
+\begin{enumerate}[leftmargin=*]
+    \item Il Forward è il \textbf{primo esempio di programmazione
+          dinamica} su un HMM: si passa da costo esponenziale
+          $\mathcal{O}(\Nstates^{\Tlen})$ a costo quadratico-lineare
+          $\mathcal{O}(\Nstates^2\Tlen)$.
+    \item La struttura ``\textbf{accumula -- transita -- emetti}'' è
+          universale: la ritroveremo identica in Viterbi e Baum--Welch.
+    \item Forward e Backward calcolano lo \emph{stesso} numero
+          $\Prob(\seqobs\given\hmm)$ da direzioni opposte: questo è un
+          potente \textbf{sanity check} implementativo.
+    \item L'identità $\fwd_t(i)\bwd_t(i) = \Prob(\seqobs,Q_t{=}s_i)$
+          non è una curiosità, ma la \textbf{chiave di volta} che
+          permette l'apprendimento nel Capitolo~\ref{ch:baumwelch}.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{osservazione}[Forward come ``filtro bayesiano'']
+Il Forward può essere interpretato come un \emph{filtro online}:
+ad ogni nuovo dato $o_t$ aggiorna la distribuzione sugli stati.
+Questa è la stessa logica del filtro di Kalman per variabili
+continue e del \emph{particle filter} per modelli non lineari.
+Gli HMM sono il caso discreto più semplice di questo paradigma.
+\end{osservazione}
+
+% =====================================================================
+\chapter{Il problema del Decoding: l'algoritmo di Viterbi}
+\label{ch:viterbi}
+% =====================================================================
+
+\section{Posizione del problema}
+
+\begin{tcolorbox}[notebox,title=Problema 2 -- Decoding (Most Probable Path)]
+Dati $\hmm$ e una sequenza di osservazioni $\seqobs$, trovare la
+sequenza di stati nascosti $\seqstates^*=(q_1^*,\dots,q_{\Tlen}^*)$ che
+\emph{globalmente} massimizza la probabilità congiunta:
+\[
+    \seqstates^* \;=\; \argmax_{\seqstates}\Prob(\seqobs,\seqstates\given\hmm).
+\]
+\end{tcolorbox}
+
+\subsection{Una sottigliezza: \emph{globalmente} ottima vs
+\emph{localmente} ottima}
+
+Si potrebbe pensare: ``prendo, per ogni $t$, lo stato $q_t$ con
+massima probabilità marginale $\Prob(Q_t=s_i\given\seqobs,\hmm)$''.
+Questo è ciò che ci darebbe il \emph{decoding di stato singolo} o
+\emph{posterior decoding}, e si può effettivamente fare tramite le
+$\gam_t(i)$ che incontreremo nel Capitolo~\ref{ch:baumwelch}. Ma il
+risultato \emph{non è in generale una traiettoria valida}: la
+sequenza di stati così ottenuta potrebbe attraversare transizioni
+con probabilità $a_{ij}=0$.
+
+Il decoding ``vero'' (di sequenza) richiede di massimizzare sulla
+\emph{traiettoria completa}, ed è qui che entra in gioco l'algoritmo
+di Viterbi.
+
+\section{Idea: programmazione dinamica con \texorpdfstring{$\max$}{max}
+invece di \texorpdfstring{$\sum$}{sum}}
+
+\begin{intuizione}
+La struttura del problema è la stessa del Forward: ad ogni passo
+``estendiamo'' percorsi di lunghezza $t$ a percorsi di lunghezza
+$t+1$. Ma invece di \emph{sommare} le probabilità dei percorsi che
+arrivano in uno stato, ne \emph{teniamo il massimo}: ciò che ci
+interessa è il percorso \emph{migliore}, non la somma di tutti.
+\end{intuizione}
+
+Questo cambia profondamente il significato dell'algoritmo (decisione
+invece di marginalizzazione), ma non la struttura computazionale.
+
+\begin{definizione}[Variabile di Viterbi]
+Per $1\le t\le\Tlen$ e $1\le i\le\Nstates$:
+\begin{equation}
+\vit_t(i) \;\triangleq\;
+\max_{q_1,\dots,q_{t-1}}\Prob(Q_1{=}q_1,\dots,Q_{t-1}{=}q_{t-1},Q_t{=}s_i,\,
+                              O_1{=}o_1,\dots,O_t{=}o_t\given\hmm).
+\label{eq:viterbi_def}
+\end{equation}
+Letteralmente: la probabilità del \emph{miglior percorso} di
+lunghezza $t$ che termina nello stato $s_i$ e produce le prime $t$
+osservazioni.
+\end{definizione}
+
+Per ricostruire poi la sequenza ottimale serve un'informazione
+ausiliaria: il \emph{predecessore} che ha realizzato il massimo. Lo
+chiamiamo \emph{backpointer}:
+\begin{equation}
+\psi_t(i) \;\triangleq\;
+\argmax_{1\le j\le\Nstates} \vit_{t-1}(j)\,a_{ji}.
+\label{eq:viterbi_psi}
+\end{equation}
+
+\section{Derivazione della ricorsione}
+
+\paragraph{Inizializzazione.} A $t=1$ non c'è alcun predecessore:
+\begin{equation}
+\vit_1(i) = \pi_i\,b_i(o_1),\qquad \psi_1(i)=0.
+\label{eq:vit_init}
+\end{equation}
+
+\paragraph{Passo induttivo.} Estendere un percorso ottimale di
+lunghezza $t$ che termina in $s_j$ richiede di scegliere lo stato
+precedente che produce la massima probabilità una volta combinato con
+la transizione $a_{ji}$ e l'emissione $b_i(o_{t+1})$:
+\begin{empheq}[box=\fbox]{align}
+\vit_{t+1}(i) &= \biggl[\max_{1\le j\le\Nstates}\vit_t(j)\,a_{ji}\biggr]
+                 \,b_i(o_{t+1}),\label{eq:vit_recursion}\\[2pt]
+\psi_{t+1}(i) &= \argmax_{1\le j\le\Nstates}\vit_t(j)\,a_{ji}.
+\end{empheq}
+
+Il confronto con la \eqref{eq:fwd_recursion} è istruttivo: il Forward
+e il Viterbi differiscono \emph{solo} per la sostituzione di $\sum$
+con $\max$. È la stessa relazione che esiste tra \emph{integrale} e
+\emph{punto di massimo}: ``somma su tutti i percorsi'' vs ``percorso
+ottimo''.
+
+\paragraph{Terminazione e backtracking.} La probabilità del miglior
+percorso completo è
+\begin{equation}
+P^* = \max_{1\le i\le\Nstates} \vit_{\Tlen}(i),\qquad
+q_{\Tlen}^* = \argmax_{1\le i\le\Nstates} \vit_{\Tlen}(i).
+\end{equation}
+Per ottenere la sequenza ottimale si procede a ritroso seguendo i
+backpointer:
+\begin{equation}
+q_t^* = \psi_{t+1}(q_{t+1}^*),\qquad t=\Tlen-1,\Tlen-2,\dots,1.
+\label{eq:viterbi_backtrack}
+\end{equation}
+
+\section{Pseudocodice}
+
+\begin{algorithm}[H]
+\caption{Algoritmo di Viterbi}
+\label{alg:viterbi}
+\begin{algorithmic}[1]
+\Require $\hmm$, $\seqobs$.
+\Ensure Sequenza ottima $\seqstates^*$ e probabilità $P^*$.
+\State \textbf{Inizializzazione:}
+\For{$i=1$ \textbf{to} $\Nstates$}
+    \State $\vit_1(i) \gets \pi_i\,b_i(o_1)$
+    \State $\psi_1(i) \gets 0$
+\EndFor
+\State \textbf{Induzione:}
+\For{$t=1$ \textbf{to} $\Tlen-1$}
+    \For{$i=1$ \textbf{to} $\Nstates$}
+        \State $\vit_{t+1}(i) \gets b_i(o_{t+1})\cdot\max_{j}\bigl[\vit_t(j)\,a_{ji}\bigr]$
+        \State $\psi_{t+1}(i) \gets \argmax_{j}\bigl[\vit_t(j)\,a_{ji}\bigr]$
+    \EndFor
+\EndFor
+\State \textbf{Terminazione:}
+\State $P^* \gets \max_i \vit_{\Tlen}(i)$
+\State $q_{\Tlen}^* \gets \argmax_i \vit_{\Tlen}(i)$
+\State \textbf{Backtracking:}
+\For{$t=\Tlen-1$ \textbf{down to} $1$}
+    \State $q_t^* \gets \psi_{t+1}(q_{t+1}^*)$
+\EndFor
+\State \Return $(q_1^*,\dots,q_{\Tlen}^*),\;P^*$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Complessità.} Identica al Forward:
+$\mathcal{O}(\Nstates^2\Tlen)$ in tempo, $\mathcal{O}(\Nstates\,\Tlen)$
+in spazio (per memorizzare $\vit$ e $\psi$).
+
+\begin{tcolorbox}[insightbox,title=Viterbi = shortest path]
+La ricorsione di Viterbi è formalmente identica alla ricerca del
+\emph{cammino di costo minimo} su un DAG, se si pone $\text{costo}(i,j) =
+-\log a_{ij} - \log b_j(o_{t+1})$. Questa è la base storica della
+ricerca su grafi tipo Dijkstra/Bellman--Ford applicata ai modelli
+sequenziali, ed è il motivo per cui Viterbi è stato riscoperto in
+contesti disparati (codici convoluzionali, allineamento biologico,
+edit distance).
+\end{tcolorbox}
+
+\section{Esempio passo-passo: HMM del gelato}\label{sec:viterbi_example}
+
+Riprendiamo l'HMM di Sezione~\ref{sec:icecream_hmm} ($\seqobs=(3,1,3)$).
+
+\paragraph{$t=1$.}
+\begin{align*}
+\vit_1(H) &= 0.8\cdot 0.4 = 0.320,\quad \psi_1(H)=0,\\
+\vit_1(C) &= 0.2\cdot 0.1 = 0.020,\quad \psi_1(C)=0.
+\end{align*}
+
+\paragraph{$t=2$ ($o_2=1$).}
+Calcoliamo $\vit_2(H)$:
+\[
+\vit_2(H) = b_H(1)\cdot\max\bigl\{\vit_1(H)\,a_{HH},\;\vit_1(C)\,a_{CH}\bigr\}
+= 0.2\cdot\max\{0.32\cdot 0.6,\;0.02\cdot 0.4\}.
+\]
+Il primo termine vince: $0.192 > 0.008$. Dunque
+$\vit_2(H)=0.2\cdot 0.192 = 0.0384$ e $\psi_2(H)=H$.
+
+Analogamente,
+\[
+\vit_2(C) = 0.5\cdot\max\{0.32\cdot 0.3,\;0.02\cdot 0.5\}
+= 0.5\cdot\max\{0.096,\,0.010\} = 0.5\cdot 0.096 = 0.048,
+\]
+con $\psi_2(C)=H$.
+
+\paragraph{$t=3$ ($o_3=3$).}
+\[
+\vit_3(H) = 0.4\cdot\max\{0.0384\cdot 0.6,\;0.048\cdot 0.4\}
+= 0.4\cdot\max\{0.02304,\,0.01920\} = 0.4\cdot 0.02304 = 0.009216,
+\]
+$\psi_3(H)=H$.
+\[
+\vit_3(C) = 0.1\cdot\max\{0.0384\cdot 0.3,\;0.048\cdot 0.5\}
+= 0.1\cdot\max\{0.01152,\,0.02400\} = 0.1\cdot 0.02400 = 0.002400,
+\]
+$\psi_3(C)=C$.
+
+\paragraph{Terminazione e backtracking.}
+\[
+P^* = \max\{0.009216,\,0.002400\} = 0.009216,\qquad q_3^* = H.
+\]
+Risalendo con $\psi$: $q_2^* = \psi_3(H) = H$, $q_1^* = \psi_2(H) = H$.
+
+\textbf{Conclusione:} la sequenza più probabile è $\seqstates^* = (H,H,H)$,
+con probabilità $0.009216$. Confronto: la probabilità di
+\emph{osservare} la sequenza (ottenuta col Forward nella
+Sezione~\ref{sec:fwd_example}) era $0.02193$. Quindi la traiettoria
+ottimale rappresenta una frazione $0.009216/0.02193 \approx 42\%$ della
+massa di probabilità totale: significativa, ma lontana da essere
+schiacciante.
+
+\section{Implementazione Python}
+
+\begin{lstlisting}[caption={Viterbi in NumPy con log-probabilità per stabilità.}]
+import numpy as np
+
+def viterbi(A, B, pi, obs):
+    """
+    Restituisce (best_path, log_prob_ottimale).
+    Tutto in log per evitare underflow.
+    """
+    N = A.shape[0]
+    T = len(obs)
+    logA  = np.log(A  + 1e-300)
+    logB  = np.log(B  + 1e-300)
+    logpi = np.log(pi + 1e-300)
+
+    delta = np.zeros((T, N))
+    psi   = np.zeros((T, N), dtype=int)
+
+    delta[0] = logpi + logB[:, obs[0]]
+    for t in range(1, T):
+        # delta[t-1, j] + logA[j, i]  ->  matrice N x N
+        scores = delta[t-1, :, None] + logA          # shape (N, N)
+        psi[t]   = scores.argmax(axis=0)             # best predecessor for each i
+        delta[t] = scores.max(axis=0) + logB[:, obs[t]]
+
+    # backtracking
+    path = np.zeros(T, dtype=int)
+    path[-1] = delta[-1].argmax()
+    for t in range(T-2, -1, -1):
+        path[t] = psi[t+1, path[t+1]]
+    return path, delta[-1, path[-1]]
+\end{lstlisting}
+
+\section{Forward vs Viterbi: un confronto definitivo}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{Forward} & \textbf{Viterbi}\\
+\midrule
+Operatore principale & $\sum$ & $\max$ \\
+Quantità calcolata & $\Prob(\seqobs\given\hmm)$ & $\max_{\seqstates}\Prob(\seqobs,\seqstates\given\hmm)$\\
+Variabile dinamica & $\fwd_t(i)$ & $\vit_t(i)$ \\
+Auxiliario & --- & backpointer $\psi_t(i)$ \\
+Restituisce & probabilità totale & migliore traiettoria + sua prob.\\
+Complessità & $\mathcal{O}(\Nstates^2\Tlen)$ & $\mathcal{O}(\Nstates^2\Tlen)$ \\
+Tipica applicazione & confronto modelli & decodifica (es.\ POS tag)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{osservazione}[Algebra dei semi-anelli]
+Questa dualità sum/max non è casuale. Entrambi gli algoritmi sono
+specializzazioni dello stesso schema su un \emph{semi-anello}:
+$(\R_{\ge 0},+,\times,0,1)$ per il Forward, $(\R_{\ge 0},\max,\times,0,1)$
+per il Viterbi. Cambiando semi-anello si ottengono altri algoritmi
+utili (es.\ il \emph{$k$-best Viterbi} usa un semi-anello che mantiene
+le $k$ migliori configurazioni).
+\end{osservazione}
+
+\section{Riepilogo del capitolo}
+
+\begin{itemize}[leftmargin=*]
+    \item Viterbi calcola la traiettoria di stati globalmente più
+          probabile data la sequenza di osservazioni.
+    \item Si ottiene dal Forward sostituendo $\sum\mapsto\max$ e
+          aggiungendo i backpointer per la ricostruzione.
+    \item Stessa complessità del Forward, stesso costo di memoria.
+    \item In pratica si usano log-probabilità per evitare underflow.
+\end{itemize}
+
+\begin{tcolorbox}[insightbox,title=Takeaway -- Capitolo 4]
+\begin{enumerate}[leftmargin=*]
+    \item La sostituzione $\sum \to \max$ è l'\textbf{unica}
+          differenza strutturale tra Forward e Viterbi: stessa
+          complessità, stessa griglia, diverso significato.
+    \item Il \textbf{backtracking} è indispensabile: senza i
+          puntatori $\psi_t(i)$ non si potrebbe ricostruire la
+          traiettoria ottimale.
+    \item Il \textbf{posterior decoding} (scegliere lo stato più
+          probabile istante per istante tramite $\gam_t$) è
+          un'alternativa al Viterbi, ma può produrre sequenze
+          \emph{inammissibili}.
+    \item Lavorare in \textbf{log-dominio} è essenziale in pratica:
+          trasforma prodotti in somme e previene l'underflow
+          numerico.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{osservazione}[Quando preferire Viterbi vs posterior decoding]
+Viterbi è preferibile quando serve una traiettoria \emph{coerente}
+(es.\ riconoscimento vocale: la sequenza di fonemi deve rispettare
+la grammatica). Il posterior decoding è preferibile quando interessa
+la \emph{confidenza locale} su ogni stato (es.\ in bioinformatica,
+dove si vuole la probabilità che ogni nucleotide appartenga a una
+regione codificante). In molte applicazioni moderne si usano
+entrambi.
+\end{osservazione}
+
+% =====================================================================
+\chapter{Il problema del Learning: l'algoritmo di Baum--Welch}
+\label{ch:baumwelch}
+% =====================================================================
+
+\section{Posizione del problema}
+
+\begin{tcolorbox}[notebox,title=Problema 3 -- Learning]
+Dato un insieme di sequenze di osservazioni $\{\seqobs^{(1)},\dots,
+\seqobs^{(K)}\}$ e fissata la topologia dell'HMM (ovvero $\Nstates$ e
+$\Msym$), stimare i parametri $\hmm = (\Amat,\Bmat,\initvec)$ che
+\emph{massimizzano la verosimiglianza} dei dati:
+\[
+    \hmm^* = \argmax_{\hmm} \prod_{k=1}^{K} \Prob(\seqobs^{(k)}\given\hmm).
+\]
+\end{tcolorbox}
+
+Per semplicità trattiamo prima il caso $K=1$: una sola sequenza.
+L'estensione a $K$ sequenze segue gli stessi principi e la
+formuleremo alla fine del capitolo.
+
+\section{Perché non si risolve esplicitamente}
+
+In presenza di \emph{stati osservati}, la stima di massima
+verosimiglianza si scrive in forma chiusa contando frequenze:
+\begin{equation}
+\hat{a}_{ij} = \frac{\#\{\text{transizioni } i\to j\}}{\#\{\text{transizioni
+                       uscenti da } i\}},
+\quad
+\hat{b}_j(k) = \frac{\#\{\text{stato } j\text{, osservazione } v_k\}}
+                    {\#\{\text{stato } j\}}.
+\label{eq:mle_observed}
+\end{equation}
+
+Ma gli stati sono nascosti! Non abbiamo accesso ai conteggi al
+numeratore. La log-verosimiglianza
+\begin{equation}
+\log\Prob(\seqobs\given\hmm)
+= \log\sum_{\seqstates}\Prob(\seqobs,\seqstates\given\hmm)
+\end{equation}
+contiene un logaritmo di somma: non ammette derivata in forma chiusa
+rispetto ai parametri, e non c'è una soluzione analitica.
+
+\section{La strategia EM}
+
+\begin{intuizione}
+Procediamo in modo iterativo: se conoscessimo $\hmm$ potremmo
+calcolare le probabilità ``soft'' di ogni transizione e di ogni
+emissione; allora useremmo questi conteggi attesi al posto dei
+conteggi reali nella \eqref{eq:mle_observed}; otterremmo nuovi
+parametri; e itereremmo.
+\end{intuizione}
+
+Questa è esattamente l'algoritmo \emph{Expectation--Maximization} di
+Dempster--Laird--Rubin (1977). Per gli HMM si chiama
+\emph{Baum--Welch} ed è precedente alla formulazione generale dell'EM
+(Baum et al., 1970).
+
+\paragraph{Struttura generale.}
+\begin{enumerate}[leftmargin=*]
+    \item Si parte da una stima iniziale $\hmm^{(0)}$.
+    \item \textbf{E-step}: con i parametri correnti, calcolare le
+          posterior su variabili latenti
+          $\Prob(Q_t=s_i\given\seqobs,\hmm^{(n)})$ e
+          $\Prob(Q_t=s_i,Q_{t+1}=s_j\given\seqobs,\hmm^{(n)})$.
+    \item \textbf{M-step}: aggiornare $\hmm$ massimizzando la
+          verosimiglianza \emph{attesa} (i conteggi diventano i
+          conteggi attesi).
+    \item Iterare finché la verosimiglianza non converge.
+\end{enumerate}
+
+EM garantisce che la verosimiglianza \emph{non decresce} ad ogni
+iterazione, e quindi converge a un \emph{massimo locale} (in
+generale non globale: vedremo come mitigare il problema).
+
+\section{Le variabili E-step: \texorpdfstring{$\gam$}{gamma} e \texorpdfstring{$\xig$}{xi}}
+
+Servono due posterior cruciali, già anticipate nel capitolo Forward.
+
+\begin{definizione}[Posterior marginale di stato $\gam_t$]
+\begin{equation}
+\gam_t(i) \;\triangleq\; \Prob(Q_t=s_i\given\seqobs,\hmm).
+\label{eq:gamma_def}
+\end{equation}
+Probabilità di trovarsi nello stato $s_i$ al tempo $t$, dato l'intero
+flusso di osservazioni e i parametri correnti.
+\end{definizione}
+
+\begin{definizione}[Posterior congiunta di transizione $\xig_t$]
+\begin{equation}
+\xig_t(i,j) \;\triangleq\; \Prob(Q_t=s_i,Q_{t+1}=s_j\given\seqobs,\hmm),
+\quad 1\le t\le\Tlen-1.
+\label{eq:xi_def}
+\end{equation}
+Probabilità di compiere la transizione $i\to j$ tra gli istanti $t$ e
+$t+1$, dato l'intero flusso di osservazioni.
+\end{definizione}
+
+\subsection{Calcolo di \texorpdfstring{$\gam_t(i)$}{gamma t(i)}}
+
+Usando la Proposizione~\ref{prop:fwdbwd}:
+\begin{equation}
+\gam_t(i)
+= \frac{\Prob(\seqobs,Q_t=s_i\given\hmm)}{\Prob(\seqobs\given\hmm)}
+= \frac{\fwd_t(i)\,\bwd_t(i)}{\displaystyle\sum_{k=1}^{\Nstates}\fwd_t(k)\,\bwd_t(k)}.
+\label{eq:gamma_formula}
+\end{equation}
+
+Si verifica facilmente che $\sum_i\gam_t(i)=1$ per ogni $t$: è una
+distribuzione di probabilità sugli stati a tempo $t$.
+
+\subsection{Calcolo di \texorpdfstring{$\xig_t(i,j)$}{xi t(i,j)}}
+
+\begin{proposizione}\label{prop:xi}
+Sotto le assunzioni HMM:
+\begin{equation}
+\xig_t(i,j)
+= \frac{\fwd_t(i)\,a_{ij}\,b_j(o_{t+1})\,\bwd_{t+1}(j)}
+       {\Prob(\seqobs\given\hmm)}.
+\label{eq:xi_formula}
+\end{equation}
+\end{proposizione}
+
+\begin{proof}
+Per la definizione di probabilità condizionata
+\[
+\xig_t(i,j) =
+\frac{\Prob(Q_t=s_i, Q_{t+1}=s_j, \seqobs \given\hmm)}{\Prob(\seqobs\given\hmm)}.
+\]
+Scomponiamo il numeratore. Inserendo $o_{1:t}$, $Q_t=s_i$ a sinistra e
+$Q_{t+1}=s_j$, $o_{t+1:\Tlen}$ a destra, e usando le assunzioni di
+Markov + output independence:
+\begin{align*}
+\Prob(o_{1:t},Q_t=s_i,Q_{t+1}=s_j,o_{t+1:\Tlen})
+&= \underbrace{\Prob(o_{1:t},Q_t=s_i)}_{\fwd_t(i)} \cdot
+   \underbrace{\Prob(Q_{t+1}=s_j\given Q_t=s_i)}_{a_{ij}} \\
+&\quad\cdot \underbrace{\Prob(o_{t+1}\given Q_{t+1}=s_j)}_{b_j(o_{t+1})} \cdot
+   \underbrace{\Prob(o_{t+2:\Tlen}\given Q_{t+1}=s_j)}_{\bwd_{t+1}(j)}.
+\end{align*}
+Sostituendo, si ottiene la \eqref{eq:xi_formula}.
+\end{proof}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,thick]
+  \node[circle,draw,fill=red!15,minimum size=10mm] (i) at (0,0) {$s_i$};
+  \node[circle,draw,fill=blue!15,minimum size=10mm] (j) at (4,0) {$s_j$};
+  \draw[->,thick,blue!70] (i) -- node[above]{$a_{ij}$} (j);
+
+  \node[font=\footnotesize,align=center] at (-2,0) {$\fwd_t(i)$ \\ \tiny passato fino a $t$};
+  \node[font=\footnotesize,align=center] at (6,0) {$\bwd_{t+1}(j)$ \\ \tiny futuro dopo $t+1$};
+
+  \node[font=\footnotesize] at (4,-1.2) {$b_j(o_{t+1})$};
+  \draw[->,gray] (j) -- ++(0,-0.6);
+
+  \draw[<-,gray,thin] (-2.5,0.6) -- (-1.5,0.6);
+  \draw[->,gray,thin] (5.5,0.6) -- (6.5,0.6);
+\end{tikzpicture}
+\caption{Anatomia di $\xig_t(i,j)$: $\fwd_t(i)$ ``raccoglie'' il
+passato fino a $i$ al tempo $t$; $a_{ij}\,b_j(o_{t+1})$ è l'``arco''
+$t\to t+1$; $\bwd_{t+1}(j)$ ``raccoglie'' il futuro dopo $j$ al tempo
+$t+1$. Il prodotto, normalizzato, è la posterior congiunta.}
+\label{fig:xi_diag}
+\end{figure}
+
+\subsection{Relazione tra \texorpdfstring{$\gam$}{gamma} e \texorpdfstring{$\xig$}{xi}}
+
+\begin{proposizione}\label{prop:gamma_xi}
+Per ogni $t<\Tlen$ e $i$:
+\begin{equation}
+\gam_t(i) = \sum_{j=1}^{\Nstates}\xig_t(i,j).
+\end{equation}
+\end{proposizione}
+
+\begin{proof}
+Marginalizzando la \eqref{eq:xi_def} su $j$:
+$\sum_j \Prob(Q_t=s_i,Q_{t+1}=s_j\given\seqobs) = \Prob(Q_t=s_i\given\seqobs)$.
+\end{proof}
+
+Questa è un'ottima identità di verifica nell'implementazione.
+
+\section{Interpretazione: conteggi attesi}
+
+I valori $\gam_t(i)$ e $\xig_t(i,j)$ hanno una bellissima
+interpretazione \emph{frequentista soft}:
+
+\begin{itemize}[leftmargin=*]
+    \item $\gam_t(i)$ è il ``conteggio frazionario'' atteso di trovarsi
+          in stato $i$ al tempo $t$;
+    \item $\xig_t(i,j)$ è il ``conteggio frazionario'' atteso di una
+          transizione $i\to j$ al tempo $t$.
+\end{itemize}
+
+Sommando nel tempo otteniamo conteggi globali:
+\begin{align}
+    \sum_{t=1}^{\Tlen-1}\gam_t(i) &= \E[\text{n. visite a } s_i] \quad
+    (\text{esclusa l'ultima posizione})\\
+    \sum_{t=1}^{\Tlen-1}\xig_t(i,j) &= \E[\text{n. transizioni } i\to j]\\
+    \sum_{t=1}^{\Tlen}\gam_t(i) &= \E[\text{n. visite totali a } s_i]
+\end{align}
+
+\section{M-step: formule di aggiornamento}
+
+\begin{tcolorbox}[insightbox,title=Idea base]
+Sostituire i conteggi non osservabili nella \eqref{eq:mle_observed} con
+i conteggi \emph{attesi} che abbiamo appena calcolato.
+\end{tcolorbox}
+
+Si ottengono le \emph{formule di Baum--Welch}:
+
+\begin{empheq}[box=\fbox]{align}
+\hat{\pi}_i &= \gam_1(i),\label{eq:bw_pi}\\[3pt]
+\hat{a}_{ij} &= \frac{\displaystyle\sum_{t=1}^{\Tlen-1}\xig_t(i,j)}
+                     {\displaystyle\sum_{t=1}^{\Tlen-1}\gam_t(i)},\label{eq:bw_A}\\[3pt]
+\hat{b}_j(k) &= \frac{\displaystyle\sum_{t=1,\,o_t=v_k}^{\Tlen}\gam_t(j)}
+                     {\displaystyle\sum_{t=1}^{\Tlen}\gam_t(j)}.\label{eq:bw_B}
+\end{empheq}
+
+Le interpretiamo a parole:
+
+\begin{itemize}[leftmargin=*]
+    \item $\hat{\pi}_i$ = probabilità (attesa) di partire in $s_i$.
+    \item $\hat{a}_{ij}$ = (transizioni attese $i\to j$) /
+          (visite attese a $i$, posizioni iniziali e intermedie). Una
+          frequenza relativa ``soft''.
+    \item $\hat{b}_j(k)$ = (visite attese a $j$ in cui l'osservazione
+          è $v_k$) / (visite attese a $j$).
+\end{itemize}
+
+\section{Pseudocodice e schema completo}
+
+\begin{algorithm}[H]
+\caption{Baum--Welch (Forward-Backward EM)}
+\label{alg:bw}
+\begin{algorithmic}[1]
+\Require $\seqobs$, struttura ($\Nstates$, $\Msym$), iniz.\ $\hmm^{(0)}$.
+\Ensure Parametri locali ottimi $\hat\hmm$.
+\Repeat
+    \State \textbf{E-step:}
+    \State Calcola $\fwd_t(i)$ con l'Algoritmo~\ref{alg:forward}
+    \State Calcola $\bwd_t(i)$ con l'Algoritmo~\ref{alg:backward}
+    \For{$t=1$ \textbf{to} $\Tlen$, $i=1$ \textbf{to} $\Nstates$}
+        \State $\gam_t(i) \gets \dfrac{\fwd_t(i)\bwd_t(i)}{\sum_k\fwd_t(k)\bwd_t(k)}$
+    \EndFor
+    \For{$t=1$ \textbf{to} $\Tlen-1$, $i,j=1\dots\Nstates$}
+        \State $\xig_t(i,j) \gets \dfrac{\fwd_t(i)a_{ij}b_j(o_{t+1})\bwd_{t+1}(j)}
+                              {\Prob(\seqobs\given\hmm)}$
+    \EndFor
+    \State \textbf{M-step:}
+    \State $\hat\pi_i \gets \gam_1(i)$
+    \State $\hat a_{ij} \gets \dfrac{\sum_t \xig_t(i,j)}{\sum_t \gam_t(i)}$
+    \State $\hat b_j(k) \gets \dfrac{\sum_{t:\,o_t=v_k}\gam_t(j)}{\sum_t \gam_t(j)}$
+    \State $\hmm \gets (\hat\Amat,\hat\Bmat,\hat{\initvec})$
+\Until{$|\log\Prob(\seqobs\given\hmm^{(n)})-\log\Prob(\seqobs\given\hmm^{(n-1)})|<\varepsilon$}
+\State \Return $\hmm$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Complessità per iterazione.} L'E-step costa
+$\mathcal{O}(\Nstates^2\Tlen)$ (Forward + Backward + $\xig$); l'M-step
+costa $\mathcal{O}(\Nstates^2\Tlen + \Nstates\Msym\Tlen)$. Lineare in
+$\Tlen$.
+
+\section{Garanzia di convergenza (cenno)}
+
+\begin{teorema}[Baum 1972, EM Dempster--Laird--Rubin 1977]
+Sia $\hmm^{(n+1)}$ il parametro ottenuto applicando le formule
+\eqref{eq:bw_pi}--\eqref{eq:bw_B} a partire da $\hmm^{(n)}$. Allora
+\begin{equation}
+\Prob(\seqobs\given\hmm^{(n+1)}) \;\ge\; \Prob(\seqobs\given\hmm^{(n)}).
+\end{equation}
+\end{teorema}
+
+L'argomento usa la funzione ausiliaria di Baum
+\begin{equation}
+Q(\hmm,\hmm') = \sum_{\seqstates}\Prob(\seqstates\given\seqobs,\hmm)
+                  \log\Prob(\seqstates,\seqobs\given\hmm').
+\end{equation}
+Si dimostra che (a) massimizzare $Q$ in $\hmm'$ a $\hmm$ fissato
+porta esattamente alle formule di Baum--Welch e (b)
+$Q(\hmm,\hmm')\ge Q(\hmm,\hmm)$ implica
+$\log\Prob(\seqobs\given\hmm')\ge\log\Prob(\seqobs\given\hmm)$. La
+dimostrazione completa è in Baum (1972) e in qualunque libro su EM.
+
+\begin{tcolorbox}[warningbox,title=Massimi locali]
+La convergenza è solo a un \emph{punto critico locale}. La superficie
+di verosimiglianza degli HMM è notoriamente complicata, con molti
+ottimi locali. In pratica si combatte questo problema con
+\begin{itemize}[leftmargin=*]
+    \item \textbf{multipli random restart};
+    \item \textbf{inizializzazioni informate} (k-means sulle
+          osservazioni continue, segmental k-means di Rabiner, prior
+          su transizioni proibite);
+    \item \textbf{regolarizzazione} (soglie minime $\varepsilon$ su
+          $b_j(k)$ per evitare $0$ irreversibili).
+\end{itemize}
+\end{tcolorbox}
+
+\section{Esempio: una iterazione su HMM del gelato}
+
+Per fissare le idee, applichiamo \emph{una} iterazione di Baum--Welch
+all'HMM del gelato partendo dai parametri di
+Sezione~\ref{sec:icecream_hmm}, con la sola sequenza $\seqobs=(3,1,3)$.
+
+\paragraph{E-step.} Dal Forward (Sez.~\ref{sec:fwd_example}):
+\[
+\fwd_1 = (0.32,\,0.02),\ \fwd_2=(0.040,\,0.053),\ \fwd_3=(0.018080,\,0.003850).
+\]
+Calcoliamo il Backward:
+\[
+\bwd_3 = (1,\,1).
+\]
+\begin{align*}
+\bwd_2(H) &= a_{HH}b_H(3)\bwd_3(H)+a_{HC}b_C(3)\bwd_3(C)\\
+          &= 0.6\cdot 0.4 + 0.3\cdot 0.1 = 0.270.\\
+\bwd_2(C) &= a_{CH}b_H(3)\bwd_3(H)+a_{CC}b_C(3)\bwd_3(C)\\
+          &= 0.4\cdot 0.4 + 0.5\cdot 0.1 = 0.210.\\
+\bwd_1(H) &= a_{HH}b_H(1)\bwd_2(H)+a_{HC}b_C(1)\bwd_2(C)\\
+          &= 0.6\cdot 0.2\cdot 0.27 + 0.3\cdot 0.5\cdot 0.21 = 0.0324 + 0.0315 = 0.0639.\\
+\bwd_1(C) &= 0.4\cdot 0.2\cdot 0.27 + 0.5\cdot 0.5\cdot 0.21 = 0.0216 + 0.0525 = 0.0741.
+\end{align*}
+
+Verifica: $\sum_i \pi_i b_i(o_1)\bwd_1(i) = 0.8\cdot 0.4\cdot 0.0639 +
+0.2\cdot 0.1\cdot 0.0741 = 0.02045 + 0.001482 \approx 0.02193$. \checkmark
+
+\paragraph{$\gam_t$.} Con $P=\Prob(\seqobs)\approx 0.02193$:
+\[
+\gam_1 = \biggl(\frac{0.32\cdot 0.0639}{0.02193},\,
+                \frac{0.02\cdot 0.0741}{0.02193}\biggr)
+       \approx (0.932,\,0.068).
+\]
+\[
+\gam_2 \approx \biggl(\frac{0.040\cdot 0.27}{0.02193},\,
+                       \frac{0.053\cdot 0.21}{0.02193}\biggr)
+       \approx (0.492,\,0.508).
+\]
+\[
+\gam_3 \approx (0.824,\,0.176).
+\]
+
+\paragraph{$\xig_t$.} Per $t=1$, $i=H,j=H$:
+\[
+\xig_1(H,H)=\frac{\fwd_1(H)\,a_{HH}\,b_H(1)\,\bwd_2(H)}{P}
+           = \frac{0.32\cdot 0.6\cdot 0.2\cdot 0.27}{0.02193}
+           \approx 0.473.
+\]
+Analogamente $\xig_1(H,C)\approx 0.459$, $\xig_1(C,H)\approx 0.019$,
+$\xig_1(C,C)\approx 0.049$. Si verifica
+$\gam_1(H)\approx 0.473+0.459=0.932$ \checkmark.
+
+\paragraph{M-step.} Applicando le \eqref{eq:bw_pi}--\eqref{eq:bw_B}
+(omettiamo i conti) si ottengono parametri leggermente aggiornati.
+Con una sola sequenza il segnale è povero, ma il meccanismo è esattamente
+questo: ogni iterazione raffina i parametri usando i conteggi attesi.
+
+\section{Estensione a più sequenze}
+
+In pratica si addestrano gli HMM su \emph{molte} sequenze
+indipendenti $\seqobs^{(1)},\dots,\seqobs^{(K)}$. Definendo
+$P_k = \Prob(\seqobs^{(k)}\given\hmm)$, le formule diventano:
+\begin{equation}
+\hat a_{ij} = \frac{\sum_{k=1}^{K}\frac{1}{P_k}\sum_{t=1}^{\Tlen_k-1}
+                   \fwd_t^{(k)}(i)\,a_{ij}\,b_j(o_{t+1}^{(k)})\,\bwd_{t+1}^{(k)}(j)}
+                  {\sum_{k=1}^{K}\frac{1}{P_k}\sum_{t=1}^{\Tlen_k-1}
+                   \fwd_t^{(k)}(i)\,\bwd_t^{(k)}(i)},
+\end{equation}
+e analogamente per $\hat b_j(k)$, $\hat\pi_i$. Il fattore $1/P_k$
+normalizza la $k$-esima sequenza; quando si lavora con probabilità
+scalate (cfr.\ Capitolo~\ref{ch:stabilita}) questo termine si cancella
+automaticamente.
+
+\section{Riepilogo}
+
+\begin{itemize}[leftmargin=*]
+    \item Il learning negli HMM è un problema con variabili latenti
+          e si risolve con EM.
+    \item Le variabili posterior $\gam_t(i)$ e $\xig_t(i,j)$, calcolate
+          dal Forward--Backward, sono ``conteggi attesi soft''.
+    \item Le formule di Baum--Welch sostituiscono i conteggi reali
+          con quelli attesi e producono nuove stime ML.
+    \item La verosimiglianza non decresce; convergenza solo locale.
+\end{itemize}
+
+\begin{tcolorbox}[insightbox,title=Takeaway -- Capitolo 5]
+\begin{enumerate}[leftmargin=*]
+    \item Baum--Welch è un'istanza di \textbf{EM}: alterna
+          un E-step (calcolo delle posterior sugli stati latenti)
+          e un M-step (aggiornamento dei parametri).
+    \item Le variabili $\gam_t(i)$ e $\xig_t(i,j)$ sono
+          \textbf{conteggi frazionari}: sostituiscono i conteggi
+          ``duri'' che avremmo se gli stati fossero osservabili.
+    \item L'intero E-step si appoggia su Forward + Backward,
+          quindi la \textbf{complessità per iterazione} è
+          $\mathcal{O}(\Nstates^2\Tlen)$.
+    \item La convergenza è garantita solo a un \textbf{massimo
+          locale}: in pratica servono \emph{random restart} e/o
+          inizializzazioni informate.
+    \item La relazione $\gam_t(i)=\sum_j \xig_t(i,j)$ è un
+          \textbf{test di correttezza} immediato per qualsiasi
+          implementazione.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{osservazione}[Baum--Welch e gradient descent]
+Un'alternativa moderna al Baum--Welch è il \emph{gradient ascent}
+sulla log-verosimiglianza, con proiezione sul simplesso per rispettare
+i vincoli stocastici. Questo approccio è meno elegante ma più
+flessibile: si integra facilmente con regolarizzazione e con
+architetture neurali (si pensi alle RNN come ``HMM continui''). In
+realtà Baum--Welch e gradient ascent condividono lo stesso punto
+fisso: la differenza è nel percorso, non nella destinazione.
+\end{osservazione}
+
+% =====================================================================
+\chapter{Visione d'insieme e prospettive}
+\label{ch:conclusioni}
+% =====================================================================
+
+Dopo aver trattato in dettaglio i tre problemi fondamentali, è utile
+ricomporre il quadro complessivo e collocare gli HMM nel panorama più
+ampio del machine learning.
+
+\section{I tre problemi come un unico ecosistema}
+
+I tre problemi non sono indipendenti: formano un ciclo virtuoso.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[->,>=Stealth,thick,node distance=4.5cm]
+  \node[draw,rounded corners,fill=blue!10,minimum height=1.2cm,
+        minimum width=3cm,align=center] (eval) {\textbf{Evaluation}\\Forward/Backward};
+  \node[draw,rounded corners,fill=green!10,minimum height=1.2cm,
+        minimum width=3cm,align=center,right=of eval] (learn)
+        {\textbf{Learning}\\Baum--Welch};
+  \node[draw,rounded corners,fill=red!10,minimum height=1.2cm,
+        minimum width=3cm,align=center,
+        below right=2cm and 0.8cm of eval] (dec)
+        {\textbf{Decoding}\\Viterbi};
+
+  \draw[->] (eval) -- node[above,font=\small]{$\fwd,\bwd$} (learn);
+  \draw[->] (learn) to[bend left=20] node[right,font=\small]{$\hmm$ aggiornato} (eval);
+  \draw[->] (learn) -- node[right,font=\small]{parametri ottimizzati} (dec);
+  \draw[->] (eval) -- node[left,font=\small]{$\Prob(\seqobs\given\hmm)$} (dec);
+\end{tikzpicture}
+\caption{Interdipendenza dei tre problemi. Il Learning usa il Forward--Backward
+come sotto-routine; il modello appreso alimenta Evaluation e Decoding.}
+\label{fig:three_problems_cycle}
+\end{figure}
+
+\begin{osservazione}[Una struttura ricorrente nella scienza dei dati]
+Questa triade --- valutare un modello, decodificare i dati, apprendere
+i parametri --- non è esclusiva degli HMM. La si ritrova nei CRF
+(Conditional Random Fields), nei modelli di topic (LDA), nelle reti
+neurali ricorrenti (RNN) e persino nei Transformer con attenzione
+latente. Comprendere a fondo il caso HMM fornisce un \emph{template
+concettuale} che si trasferisce a questi modelli più complessi.
+\end{osservazione}
+
+\section{Il filo rosso algoritmico}
+
+Tutti gli algoritmi studiati condividono la stessa architettura a
+tre fasi:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Fase} & \textbf{Forward} & \textbf{Viterbi} & \textbf{Baum--Welch}\\
+\midrule
+Inizializzazione & $\pi_i\,b_i(o_1)$ & $\pi_i\,b_i(o_1)$ & random $\hmm^{(0)}$ \\
+Ricorsione & $\sum + \times$ & $\max + \times$ & E-step (F+B) + M-step \\
+Terminazione & $\sum_i \fwd_{\Tlen}(i)$ & backtrack da $\argmax$ & convergenza $\mathcal{L}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{osservazione}[Programmazione dinamica come principio unificante]
+Il messaggio più profondo di queste dispense è che la
+\textbf{programmazione dinamica sul trellis} è il motore comune di
+tutto: Forward somma, Viterbi massimizza, Backward va a ritroso, e
+Baum--Welch li combina. Padroneggiare il trellis significa padroneggiare
+gli HMM.
+\end{osservazione}
+
+\section{Limiti degli HMM e direzioni moderne}
+
+\begin{osservazione}[Cosa gli HMM non catturano]
+Le due assunzioni fondamentali (Markov + Output Independence) sono
+al contempo la forza e il limite del modello:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Memoria limitata:} dipendenze a lungo raggio
+          (es.\ concordanza soggetto-verbo in linguistica) non sono
+          modellabili con un HMM del primo ordine. HMM di ordine
+          superiore alleviano il problema a costo di un'esplosione
+          dello spazio degli stati.
+    \item \textbf{Emissioni condizionate solo allo stato:}
+          l'osservazione $o_t$ non può dipendere da $o_{t-1}$
+          direttamente. Autoregressive HMM e Input--Output HMM
+          rilassano questa restrizione.
+    \item \textbf{Numero di stati fisso:} va scelto a priori.
+          I processi bayesiani non parametrici (\emph{Infinite HMM},
+          \emph{Hierarchical Dirichlet Process HMM}) eliminano questo
+          vincolo.
+\end{itemize}
+\end{osservazione}
+
+\begin{tcolorbox}[notebox,title=Dall'HMM ai modelli moderni]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{CRF (Conditional Random Fields):} modelli
+          discriminativi che condividono il trellis e il Forward
+          dell'HMM, ma condizionano direttamente sulle osservazioni
+          senza modellare $\Prob(\seqobs)$.
+    \item \textbf{RNN / LSTM / GRU:} reti neurali ricorrenti che
+          possono essere viste come HMM con spazio degli stati
+          continuo e infinito, e funzioni di transizione/emissione
+          apprese.
+    \item \textbf{Transformer:} rimpiazzano la ricorsione temporale
+          con l'\emph{attenzione}, permettendo dipendenze a lungo
+          raggio senza il bottleneck markoviano.
+    \item \textbf{Filtro di Kalman:} l'analogo continuo dell'HMM,
+          con stati gaussiani e transizioni lineari.
+\end{itemize}
+\end{tcolorbox}
+
+\section{Riepilogo finale delle dispense}
+
+\begin{tcolorbox}[insightbox,title=I dieci messaggi da portare a casa]
+\begin{enumerate}[leftmargin=*]
+    \item Un HMM separa un \textbf{processo latente} (catena di
+          Markov) da un \textbf{processo osservato} (emissioni).
+    \item Le \textbf{due assunzioni} (Markov + Output Independence)
+          rendono il modello trattabile.
+    \item La \textbf{formula generativa} $\Prob(\seqobs,\seqstates)$
+          è il punto di partenza di ogni algoritmo.
+    \item Il \textbf{Forward} calcola $\Prob(\seqobs\given\hmm)$ in
+          tempo $\mathcal{O}(\Nstates^2\Tlen)$ sommando su tutti i
+          percorsi.
+    \item Il \textbf{Backward} è il duale temporale del Forward e,
+          combinato con esso, dà accesso alle posterior.
+    \item Il \textbf{Viterbi} trova la traiettoria nascosta
+          \emph{globalmente} più probabile sostituendo $\sum$ con
+          $\max$.
+    \item Il \textbf{Baum--Welch} (EM) apprende i parametri usando
+          ``conteggi attesi soft'' calcolati dal Forward--Backward.
+    \item La \textbf{programmazione dinamica sul trellis} è il
+          principio algoritmico che unifica tutto.
+    \item In pratica si lavora in \textbf{log-dominio} o con
+          coefficienti di scaling per evitare underflow.
+    \item Gli HMM sono il \textbf{prototipo concettuale} di una
+          famiglia di modelli che include CRF, RNN e Transformer.
+\end{enumerate}
+\end{tcolorbox}
+
+\end{document}

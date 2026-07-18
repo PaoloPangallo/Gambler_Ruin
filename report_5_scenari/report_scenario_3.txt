@@ -1,0 +1,24 @@
+=====================================================================
+  REPORT DI SIMULAZIONE SCENARIO 3: 3. DAVIDE CONTRO GOLIA
+=====================================================================
+  Descrizione:  Forte vantaggio di gioco del giocatore (60%) ma con pochissime risorse iniziali (5 contro 95).
+=====================================================================
+
+  [PARAMETRI DI GIOCO]
+  - Capitale Iniziale Giocatore (a): 5 EUR
+  - Capitale Iniziale Banco (b):     95 EUR
+  - Capitale Totale Sistema (N):     100 EUR
+  - Probabilità di Vincita (p):      0.6000
+  - Probabilità di Perdita (q):      0.4000
+
+  [RISULTATI ANALITICI TEORICI]
+  - Probabilità di Fortuna (Vittoria): 0.868313 (86.83%)
+  - Probabilità di Rovina (Sconfitta): 0.131687 (13.17%)
+  - Durata Attesa del Gioco:           409.16 passi
+
+  [RISULTATI EMPIRICI (20.000 simulazioni Monte Carlo)]
+  - Probabilità Fortuna (MC):          0.869750 (Err. Assoluto: 0.001437)
+  - Probabilità Rovina (MC):           0.130250 (Err. Assoluto: 0.001437)
+  - Durata Media Gioco (MC):           408.91 passi (Err. Assoluto: 0.25)
+
+=====================================================================

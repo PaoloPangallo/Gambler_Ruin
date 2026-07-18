@@ -1,0 +1,24 @@
+=====================================================================
+  REPORT DI SIMULAZIONE SCENARIO 1: 1. EQUO E SIMMETRICO
+=====================================================================
+  Descrizione:  Gioco perfettamente equo con capitali iniziali del giocatore e del banco uguali.
+=====================================================================
+
+  [PARAMETRI DI GIOCO]
+  - Capitale Iniziale Giocatore (a): 20 EUR
+  - Capitale Iniziale Banco (b):     20 EUR
+  - Capitale Totale Sistema (N):     40 EUR
+  - Probabilità di Vincita (p):      0.5000
+  - Probabilità di Perdita (q):      0.5000
+
+  [RISULTATI ANALITICI TEORICI]
+  - Probabilità di Fortuna (Vittoria): 0.500000 (50.00%)
+  - Probabilità di Rovina (Sconfitta): 0.500000 (50.00%)
+  - Durata Attesa del Gioco:           400.00 passi
+
+  [RISULTATI EMPIRICI (20.000 simulazioni Monte Carlo)]
+  - Probabilità Fortuna (MC):          0.504150 (Err. Assoluto: 0.004150)
+  - Probabilità Rovina (MC):           0.495850 (Err. Assoluto: 0.004150)
+  - Durata Media Gioco (MC):           399.33 passi (Err. Assoluto: 0.67)
+
+=====================================================================

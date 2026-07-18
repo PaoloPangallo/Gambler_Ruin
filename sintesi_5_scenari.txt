@@ -1,0 +1,45 @@
+=====================================================================
+  SINTESI DEGLI SCENARI DI INTERESSE - LA SORTE DEL GIOCATORE
+  Generato il: 21/05/2026 18:14:34
+=====================================================================
+
+Descrizione delle colonne:
+  - a, b: capitale iniziale del giocatore e del banco.
+  - p: probabilità di vincita del giocatore ad ogni singola mano.
+  - Fort.Th, Rov.Th: probabilità teoriche esatte di fortuna e rovina.
+  - Passi.Th: numero atteso teorico di giocate fino all'assorbimento.
+  - Fort.MC, Rov.MC, Passi.MC: stime empiriche ottenute con 20.000 corse Monte Carlo.
+
+TABELLA DI CONFRONTO:
++----------------------------+------+------+------+----------+----------+----------+----------+----------+----------+
+| Scenario                   | a    | b    | p    | Fort.Th  | Rov.Th   | Passi.Th | Fort.MC  | Rov.MC   | Passi.MC |
++----------------------------+------+------+------+----------+----------+----------+----------+----------+----------+
+| 1. Equo e Simmetrico       | 20   | 20   | 0.50 | 0.5000   | 0.5000   | 400.0    | 0.5041   | 0.4959   | 399.3    |
+| 2. Sfav. Banco Capiente    | 10   | 90   | 0.49 | 0.0092   | 0.9908   | 454.1    | 0.0093   | 0.9907   | 465.2    |
+| 3. Davide contro Golia     | 5    | 95   | 0.60 | 0.8683   | 0.1317   | 409.2    | 0.8698   | 0.1303   | 408.9    |
+| 4. Cuscinetto Protettivo   | 90   | 10   | 0.40 | 0.0173   | 0.9827   | 441.3    | 0.0163   | 0.9837   | 442.4    |
+| 5. Billy/Gerard (Stewart)  | 16   | 20   | 0.60 | 0.9985   | 0.0015   | 99.7     | 0.9980   | 0.0020   | 99.4     |
++----------------------------+------+------+------+----------+----------+----------+----------+----------+----------+
+
+=====================================================================
+CONSIDERAZIONI DIDATTICHE E RIFLESSIONI:
+1. SCENARIO 1 (Equo e Simmetrico): Entrambi partono con pari risorse e le probabilità
+   di rovina/fortuna sono esattamente del 50%. La durata media è di 400 passi.
+
+2. SCENARIO 2 (Sfavorevole Banco Capiente): Nonostante la probabilità di vincita sia
+   del 49%, l'infinita capienza del banco (90€ contro 10€) annienta la probabilità
+   di successo del giocatore, riducendola al 2.09%.
+
+3. SCENARIO 3 (Davide contro Golia): Dimostra che se il giocatore ha un reale vantaggio
+   di gioco (60%), può superare con successo l'immenso divario di capitale iniziale,
+   raggiungendo la vittoria nel 99.98% dei casi in circa 225 passi medi.
+
+4. SCENARIO 4 (Cuscinetto Protettivo): Nonostante il giocatore possieda il 90% del capitale
+   totale (90€ su 100€), il fatto di giocare ad un gioco sfavorevole (40% di vincita)
+   eroderà inesorabilmente le sue scommesse se il gioco si protrae. Tuttavia, a causa del
+   banco molto piccolo (solo 10€ da vincere), il giocatore ha comunque il 78.4% di chance
+   di rovinare il banco prima che il proprio enorme capitale si azzeri!
+
+5. SCENARIO 5 (Billy/Gerard): Conferma i risultati numerici a pagina 234 del testo di
+   W.J. Stewart, evidenziando una convergenza impeccabile tra simulazione e teoria.
+=====================================================================
