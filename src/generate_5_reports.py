@@ -4,52 +4,8 @@ import time
 from datetime import datetime
 import numpy as np
 
-# Funzioni matematiche esatte del modello Rovina del Giocatore
-def prob_fortuna(i: int, N: int, p: float) -> float:
-    if i == 0:
-        return 0.0
-    if i == N:
-        return 1.0
-    q = 1.0 - p
-    if abs(p - 0.5) < 1e-12:
-        return i / N
-    r = q / p
-    return (1.0 - r**i) / (1.0 - r**N)
-
-def prob_rovina(i: int, N: int, p: float) -> float:
-    return 1.0 - prob_fortuna(i, N, p)
-
-def expected_steps(i: int, N: int, p: float) -> float:
-    if i == 0 or i == N:
-        return 0.0
-    q = 1.0 - p
-    if abs(p - 0.5) < 1e-12:
-        return float(i * (N - i))
-    xi = prob_fortuna(i, N, p)
-    return (i - N * xi) / (q - p)
-
-# Simulazione Monte Carlo reale
-def simula(a: int, b: int, p: float, n_sim: int = 20000, seed: int = 42) -> dict:
-    rng = np.random.default_rng(seed)
-    N = a + b
-    n_rovina = 0
-    passi_lista = []
-
-    for _ in range(n_sim):
-        capitale = a
-        passi = 0
-        while 0 < capitale < N:
-            capitale += 1 if rng.random() < p else -1
-            passi += 1
-        passi_lista.append(passi)
-        if capitale == 0:
-            n_rovina += 1
-
-    return {
-        "p_rovina_mc":  n_rovina / n_sim,
-        "p_fortuna_mc": 1.0 - n_rovina / n_sim,
-        "passi_medi":   float(np.mean(passi_lista)),
-    }
+# Importa le funzioni matematiche e di simulazione validate dal modulo centrale
+from main import prob_fortuna, prob_rovina, expected_steps, simula
 
 def build_ascii_table(scenari_dati):
     # Genera una tabella allineata e leggibile in ASCII per terminale e file di testo
@@ -115,7 +71,7 @@ def main():
     ]
     
     scenari_dati = []
-    cartella_output = "report_5_scenari"
+    cartella_output = os.path.join("outputs", "report_5_scenari")
     os.makedirs(cartella_output, exist_ok=True)
     
     for sc in scenari:
@@ -182,7 +138,7 @@ def main():
     
     # Scrittura del file globale di sintesi
     ora_corrente = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    filepath_sintesi = "sintesi_5_scenari.txt"
+    filepath_sintesi = os.path.join("outputs", "sintesi_5_scenari.txt")
     with open(filepath_sintesi, "w", encoding="utf-8") as f_sint:
         f_sint.write("=====================================================================\n")
         f_sint.write("  SINTESI DEGLI SCENARI DI INTERESSE - LA SORTE DEL GIOCATORE\n")
@@ -207,11 +163,11 @@ def main():
         f_sint.write("3. SCENARIO 3 (Davide contro Golia): Dimostra che se il giocatore ha un reale vantaggio\n")
         f_sint.write("   di gioco (60%), può superare con successo l'immenso divario di capitale iniziale,\n")
         f_sint.write("   raggiungendo la vittoria nel 99.98% dei casi in circa 225 passi medi.\n\n")
-        f_sint.write("4. SCENARIO 4 (Cuscinetto Protettivo): Nonostante il giocatore possieda il 90% del capitale\n")
-        f_sint.write("   totale (90€ su 100€), il fatto di giocare ad un gioco sfavorevole (40% di vincita)\n")
-        f_sint.write("   eroderà inesorabilmente le sue scommesse se il gioco si protrae. Tuttavia, a causa del\n")
-        f_sint.write("   banco molto piccolo (solo 10€ da vincere), il giocatore ha comunque il 78.4% di chance\n")
-        f_sint.write("   di rovinare il banco prima che il proprio enorme capitale si azzeri!\n\n")
+        f_sint.write("4. SCENARIO 4 (Cuscinetto Protettivo): Nonostante il grande capitale iniziale (90€ su 100€),\n")
+        f_sint.write("   il forte svantaggio probabilistico (p=0.40), ripetuto nel tempo, domina il processo.\n")
+        f_sint.write("   Il giocatore raggiunge il traguardo dei 100€ prima dello zero solamente nell'1.73% circa\n")
+        f_sint.write("   dei casi (la probabilità di rovina è del 98.27%). Ciò dimostra che la deriva probabilistica\n")
+        f_sint.write("   sfavorevole prevale inesorabilmente nel lungo termine anche su un enorme vantaggio di capitale.\n\n")
         f_sint.write("5. SCENARIO 5 (Billy/Gerard): Conferma i risultati numerici a pagina 234 del testo di\n")
         f_sint.write("   W.J. Stewart, evidenziando una convergenza impeccabile tra simulazione e teoria.\n")
         f_sint.write("=====================================================================\n")

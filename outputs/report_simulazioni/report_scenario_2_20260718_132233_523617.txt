@@ -1,0 +1,38 @@
+=====================================================================
+  REPORT DI SIMULAZIONE - SCENARIO 02
+  GIOCO EQUO - SBILANCIAMENTO DEL CAPITALE INIZIALE
+=====================================================================
+  Generato il:               18/07/2026 13:22:33.523
+  Riferimento didattico:      Lezioni 26-28 Prof. Legato | Stewart Sez. 9.7
+=====================================================================
+
+  [1] DESCRIZIONE DIDATTICA:
+      Il gioco è equo, ma il giocatore A inizia con solo 5€ contro i 25€ del giocatore B. La rovina asintotica di A è alta (83.3%) per svantaggio di risorse.
+
+  [2] SPECIFICHE DEI PARAMETRI:
+      - Capitale Giocatore A (a):   5 €
+      - Capitale Giocatore B (b):   25 €
+      - Capitale Obiettivo (N):     30 €
+      - Frazione di Capitale (a/N): 0.1667
+      - Probabilità di Vincita (p): 0.5000
+      - Probabilità di Perdita (q): 0.5000
+      - Natura del Gioco:           EQUO
+
+  [3] ANALISI ASINTOTICA TEORICA (n -> infinito):
+      - Probabilità Limite di Rovina: 0.833333 (83.33%)
+      - Probabilità Limite di Fortuna:0.166667 (16.67%)
+      - Numero Atteso di Passi (E[T]): 125.00 passi
+
+  [4] VALIDAZIONE NUMERICA EMPIREA (20.000 simulazioni Monte Carlo):
+      - Probabilità Rovina (MC):     0.836800  (Errore Assoluto: 0.003467)
+      - Probabilità Fortuna (MC):    0.163200  (Errore Assoluto: 0.003467)
+      - Durata Media Gioco (MC):     124.02 passi  (Errore Assoluto: 0.98)
+
+=====================================================================
+  RIFLESSIONE ACCADEMICA:
+  La convergenza tra il calcolo teorico (derivato dalle equazioni alle
+  differenze di Stewart) e il calcolo Monte Carlo dimostra l'esattezza
+  della teoria delle catene di Markov assorbenti. All'aumentare del numero
+  di passi (n), la probabilità di non essere ancora assorbiti si riduce a 0
+  con tasso di convergenza geometrico dettato dalla matrice Q^n.
+=====================================================================

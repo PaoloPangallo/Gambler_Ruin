@@ -1,0 +1,38 @@
+=====================================================================
+  REPORT DI SIMULAZIONE - SCENARIO 08
+  SUCCESSO ISTANTANEO (FORTE VANTAGGIO DI GIOCO E CAPITALE)
+=====================================================================
+  Generato il:               18/07/2026 13:23:24.476
+  Riferimento didattico:      Lezioni 26-28 Prof. Legato | Stewart Sez. 9.7
+=====================================================================
+
+  [1] DESCRIZIONE DIDATTICA:
+      Forte vantaggio iniziale sia in termini di capitale (80€ contro 20€) che di probabilità (60%). Il successo di A è praticamente immediato e garantito.
+
+  [2] SPECIFICHE DEI PARAMETRI:
+      - Capitale Giocatore A (a):   80 €
+      - Capitale Giocatore B (b):   20 €
+      - Capitale Obiettivo (N):     100 €
+      - Frazione di Capitale (a/N): 0.8000
+      - Probabilità di Vincita (p): 0.6000
+      - Probabilità di Perdita (q): 0.4000
+      - Natura del Gioco:           FAVOREVOLE ad A
+
+  [3] ANALISI ASINTOTICA TEORICA (n -> infinito):
+      - Probabilità Limite di Rovina: 0.000000 (0.00%)
+      - Probabilità Limite di Fortuna:1.000000 (100.00%)
+      - Numero Atteso di Passi (E[T]): 100.00 passi
+
+  [4] VALIDAZIONE NUMERICA EMPIREA (20.000 simulazioni Monte Carlo):
+      - Probabilità Rovina (MC):     0.000000  (Errore Assoluto: 0.000000)
+      - Probabilità Fortuna (MC):    1.000000  (Errore Assoluto: 0.000000)
+      - Durata Media Gioco (MC):     100.44 passi  (Errore Assoluto: 0.44)
+
+=====================================================================
+  RIFLESSIONE ACCADEMICA:
+  La convergenza tra il calcolo teorico (derivato dalle equazioni alle
+  differenze di Stewart) e il calcolo Monte Carlo dimostra l'esattezza
+  della teoria delle catene di Markov assorbenti. All'aumentare del numero
+  di passi (n), la probabilità di non essere ancora assorbiti si riduce a 0
+  con tasso di convergenza geometrico dettato dalla matrice Q^n.
+=====================================================================

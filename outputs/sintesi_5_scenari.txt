@@ -1,6 +1,6 @@
 =====================================================================
   SINTESI DEGLI SCENARI DI INTERESSE - LA SORTE DEL GIOCATORE
-  Generato il: 21/05/2026 18:14:34
+  Generato il: 18/07/2026 13:22:05
 =====================================================================
 
 Descrizione delle colonne:
@@ -34,11 +34,11 @@ CONSIDERAZIONI DIDATTICHE E RIFLESSIONI:
    di gioco (60%), può superare con successo l'immenso divario di capitale iniziale,
    raggiungendo la vittoria nel 99.98% dei casi in circa 225 passi medi.
 
-4. SCENARIO 4 (Cuscinetto Protettivo): Nonostante il giocatore possieda il 90% del capitale
-   totale (90€ su 100€), il fatto di giocare ad un gioco sfavorevole (40% di vincita)
-   eroderà inesorabilmente le sue scommesse se il gioco si protrae. Tuttavia, a causa del
-   banco molto piccolo (solo 10€ da vincere), il giocatore ha comunque il 78.4% di chance
-   di rovinare il banco prima che il proprio enorme capitale si azzeri!
+4. SCENARIO 4 (Cuscinetto Protettivo): Nonostante il grande capitale iniziale (90€ su 100€),
+   il forte svantaggio probabilistico (p=0.40), ripetuto nel tempo, domina il processo.
+   Il giocatore raggiunge il traguardo dei 100€ prima dello zero solamente nell'1.73% circa
+   dei casi (la probabilità di rovina è del 98.27%). Ciò dimostra che la deriva probabilistica
+   sfavorevole prevale inesorabilmente nel lungo termine anche su un enorme vantaggio di capitale.
 
 5. SCENARIO 5 (Billy/Gerard): Conferma i risultati numerici a pagina 234 del testo di
    W.J. Stewart, evidenziando una convergenza impeccabile tra simulazione e teoria.

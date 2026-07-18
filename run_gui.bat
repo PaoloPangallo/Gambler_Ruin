@@ -12,7 +12,7 @@ echo  [INFO] Utilizzo dell'ambiente 'uv' per la gestione automatica...
 echo.
 
 :: Esegue la GUI tramite uv
-uv run gui.py
+uv run src/gui.py
 
 :: Controlla se ci sono stati errori durante l'avvio
 if %errorlevel% neq 0 (

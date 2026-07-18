@@ -68,7 +68,7 @@ Utilizzando le definizioni delle slide del corso:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{catena_toy.png}
+    \includegraphics[width=0.85\textwidth]{outputs/catena_toy.png}
     \caption{Grafo della Catena di Markov (Toy Model, $N=5$) che illustra i flussi di transizione tra gli stati interni di transito e gli stati assorbenti esterni.}
     \label{fig:grafo_catena}
 \end{figure}
@@ -149,10 +149,10 @@ Dall'analisi della tabella emerge con chiarezza l'impatto dei parametri stocasti
     \item \textbf{L'effetto del gioco equo e simmetrico (Scenario 1)}: Con risorse identiche ($a=20, b=20$) e probabilità al $50\%$, le probabilità di successo e rovina si equivalgono perfettamente ($50\%$), impiegando mediamente circa $400$ passi prima che si verifichi l'assorbimento.
     \item \textbf{Il gioco sfavorevole con banco capiente (Scenario 2)}: Una minima penalità probabilistica ($p=0.49$) unita a una netta sproporzione di riserve del banco ($90$ contro $10$) azzera quasi completamente le chance di successo del giocatore, portandolo alla rovina nel $99.08\%$ dei casi. Ciò conferma la massima per cui per garantire la rovina di qualsivoglia giocatore è sufficiente progettare un gioco con $p < q$ e un capitale del banco notevolmente grande.
     \item \textbf{Il compenso delle probabilità: Davide contro Golia (Scenario 3)}: Se il giocatore possiede un effettivo vantaggio di gioco ($p=0.60$), questo compensa abbondantemente lo svantaggio iniziale in termini di risorse ($5$ contro $95$), consentendogli di rovinare il banco nell'$86.83\%$ dei casi.
-    \item \textbf{Il cuscinetto protettivo di capitale (Scenario 4)}: Qualora il giocatore si trovi in forte svantaggio stocastico ($p=0.40$) ma con una massiccia scorta iniziale di capitale ($90$ contro $10$), il cuscinetto di risorse garantisce comunque una probabilità di successo favorevole ($78.43\%$) prima di esaurire le scommesse, a dimostrazione che il capitale può tamponare temporaneamente le perdite stocastiche se l'obiettivo di vincita ($b=10$) è ridotto.
+    \item \textbf{Il capitale vs drift sfavorevole (Scenario 4)}: Nonostante il grande capitale iniziale ($a=90$), il forte svantaggio probabilistico $p=0.40$, ripetuto nel tempo, domina il processo. Il giocatore raggiunge l'obiettivo $N=100$ prima dello zero solamente nell'$1.73\%$ circa dei casi (la probabilità di rovina è del $98.27\%$). Ciò dimostra che la deriva probabilistica sfavorevole prevale inesorabilmente nel lungo termine anche a fronte di forti sbilanciamenti di risorse a favore del giocatore.
     \item \textbf{La validazione dell'esempio classico di Stewart (Scenario 5)}: L'esempio 9.14 con $a=16, b=20, p=0.60$ mostra una probabilità di fortuna analitica pari al $99.85\%$ con una partita rapida (circa $100$ giocate), confermata fedelmente dai dati Monte Carlo.
 \end{itemize}
 
-La perfetta convergenza tra i dati teorici ed empirici (con errori assoluti inferiori allo $0.005$ in tutte le metriche Monte Carlo) valida sperimentalmente l'impianto analitico derivato dalle Catene di Markov Assorbenti.
+La convergenza tra i dati teorici ed empirici --- con uno scarto assoluto inferiore a $0.002$ per quanto concerne le probabilità di assorbimento e una forte precisione (scarto relativo contenuto) per quanto concerne il tempo medio di assorbimento --- valida sperimentalmente l'impianto analitico derivato dalle Catene di Markov Assorbenti.
 
 \end{document}

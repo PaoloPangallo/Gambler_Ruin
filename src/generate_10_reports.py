@@ -13,7 +13,7 @@ from main import prob_fortuna, prob_rovina, expected_steps, simula
 
 def genera_tutti_i_report():
     # Creiamo la cartella per i report per mantenere pulito il workspace
-    cartella_output = "report_simulazioni"
+    cartella_output = os.path.join("outputs", "report_simulazioni")
     os.makedirs(cartella_output, exist_ok=True)
 
     # 10 Scenari didatticamente differenziati e bilanciati
@@ -76,7 +76,7 @@ def genera_tutti_i_report():
             "id": 10,
             "titolo": "Deficit di Capitale Estremo con Gioco Altamente Sfavorevole",
             "a": 95, "b": 5, "p": 0.45,
-            "desc": "A ha un immenso vantaggio di capitale (95€ contro 5€), ma il gioco è sfavorevole (45%). La probabilità di rovina finale di A è comunque dello 0% a causa del cuscinetto protettivo."
+            "desc": "A ha un immenso vantaggio di capitale (95€ contro 5€), ma il gioco è sfavorevole (45%). Nonostante il capitale, il giocatore ha il 63.3% di probabilità di rovina, evidenziando come lo svantaggio stocastico si imponga nel lungo termine."
         }
     ]
 

@@ -5,6 +5,7 @@
 # ]
 # ///
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
@@ -274,8 +275,9 @@ def run_gui():
         # Esegue una simulazione Monte Carlo per validazione numerica
         sim = simula(i, N - i, p, n_sim=30_000)
 
-        # Scrive il report su file report_simulazione.txt
-        with open("report_simulazione.txt", "w", encoding="utf-8") as f:
+        # Scrive il report su file outputs/report_simulazione.txt
+        os.makedirs("outputs", exist_ok=True)
+        with open("outputs/report_simulazione.txt", "w", encoding="utf-8") as f:
             f.write("=========================================================\n")
             f.write("    REPORT DI SIMULAZIONE - DTMC INTERATTIVO (GUI)\n")
             f.write("    Lezioni 26-27-28, Prof. Legato | Stewart Sez. 9.7\n")

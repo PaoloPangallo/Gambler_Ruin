@@ -32,6 +32,7 @@ Concetti implementati e loro fonte:
 # ]
 # ///
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -42,6 +43,22 @@ import io
 # Fix encoding per Windows
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
+
+# ─────────────────────────────────────────────────────────────
+# VALIDAZIONE DEI PARAMETRI
+# ─────────────────────────────────────────────────────────────
+
+def valida_parametri(i: int, N: int, p: float):
+    """
+    Valida i parametri d'ingresso per le funzioni probabilistiche.
+    """
+    if N <= 0:
+        raise ValueError("Il capitale totale N deve essere maggiore di 0.")
+    if i < 0 or i > N:
+        raise ValueError(f"Lo stato iniziale i ({i}) deve soddisfare 0 <= i <= N ({N}).")
+    if p < 0.0 or p > 1.0:
+        raise ValueError("La probabilità p deve essere compresa nell'intervallo [0, 1].")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -60,6 +77,10 @@ def build_matrice_transizione(N: int, p: float) -> np.ndarray:
     [STEW p.233]: "the transition probability matrix is given by
     [matrice con 1 in P[0,0], 1 in P[N,N], p e q sulle diagonali]"
     """
+    if N <= 0:
+        raise ValueError("Il capitale totale N deve essere maggiore di 0.")
+    if p < 0.0 or p > 1.0:
+        raise ValueError("La probabilità p deve essere compresa nell'intervallo [0, 1].")
     q = 1.0 - p
     P = np.zeros((N + 1, N + 1))
     P[0, 0] = 1.0
@@ -178,9 +199,14 @@ def prob_fortuna(i: int, N: int, p: float) -> float:
     Se p != q:  x_i = [1 - (q/p)^i] / [1 - (q/p)^N]
     Se p = q:   x_i = i / N
     """
+    valida_parametri(i, N, p)
     if i == 0:
         return 0.0
     if i == N:
+        return 1.0
+    if p == 0.0:
+        return 0.0
+    if p == 1.0:
         return 1.0
     q = 1.0 - p
     if abs(p - 0.5) < 1e-12:   # caso p = q = 1/2 [STEW p.234]
@@ -195,6 +221,7 @@ def prob_rovina(i: int, N: int, p: float) -> float:
     [STEW p.234]: "the probability that Gerard takes all of
     Billy's marbles is only 1 - x_i"
     """
+    valida_parametri(i, N, p)
     return 1.0 - prob_fortuna(i, N, p)
 
 def expected_steps(i: int, N: int, p: float) -> float:
@@ -205,8 +232,13 @@ def expected_steps(i: int, N: int, p: float) -> float:
     Se p = q = 0.5: E[T_i] = i * (N - i)
     Se p != q:     E[T_i] = (i - N * x_i) / (q - p)  dove x_i = prob_fortuna(i, N, p)
     """
+    valida_parametri(i, N, p)
     if i == 0 or i == N:
         return 0.0
+    if p == 0.0:
+        return float(i)
+    if p == 1.0:
+        return float(N - i)
     q = 1.0 - p
     if abs(p - 0.5) < 1e-12:
         return float(i * (N - i))
@@ -237,6 +269,7 @@ def distribuzione_limite(i: int, N: int, p: float) -> np.ndarray:
     [STEW p.229]: gli stati 1..N-1 sono transienti, quindi
     lim_{n->inf} P^(n)_{i,j} = 0 per j = 1..N-1.
     """
+    valida_parametri(i, N, p)
     pi = np.zeros(N + 1)
     pi[0] = prob_rovina(i, N, p)
     pi[N] = prob_fortuna(i, N, p)
@@ -254,8 +287,12 @@ def simula(a: int, b: int, p: float,
     Simula n_sim partite dalla catena DTMC.
     Confronto empirico con le formule di Stewart [STEW p.234].
     """
-    rng = np.random.default_rng(seed)
+    if a < 0 or b < 0:
+        raise ValueError("I capitali iniziali a e b non possono essere negativi.")
     N = a + b
+    valida_parametri(a, N, p)
+    
+    rng = np.random.default_rng(seed)
     n_rovina = 0
     passi_lista = []
 
@@ -368,9 +405,8 @@ def plot_analisi(a: int, b: int, p: float, n_sim: int = 40_000):
 
     # Forma normale di Stewart [SLIDE slide 24-25]
     ordine = forma_normale_stewart(N)
-    step = max(1, N // 20)
-    idx_vis = sorted(set([0, N] + list(range(1, N, step))))
-    P_fn = P[np.ix_(idx_vis, idx_vis)]
+    # Visualizziamo la matrice completa ordinata secondo Stewart
+    P_fn = P[np.ix_(ordine, ordine)]
 
     fig = plt.figure(figsize=(16, 10))
     fig.suptitle(
@@ -435,13 +471,28 @@ def plot_analisi(a: int, b: int, p: float, n_sim: int = 40_000):
     ax4 = fig.add_subplot(gs[1, 0])
     im = ax4.imshow(P_fn, cmap="Blues", aspect="auto", vmin=0, vmax=1)
     plt.colorbar(im, ax=ax4, fraction=0.046)
-    tick_labels = [str(idx_vis[k]) for k in range(len(idx_vis))]
-    ax4.set_xticks(range(len(idx_vis)))
-    ax4.set_yticks(range(len(idx_vis)))
+    
+    # Generiamo un sottoinsieme di etichette per evitare sovrapposizioni mantenendo la matrice intera
+    tick_positions = []
+    tick_labels = []
+    tick_positions.extend([0, 1])
+    tick_labels.extend(["0", f"{N}"])
+    
+    step_vis = max(1, (N - 1) // 10)
+    for k in range(2, N + 1):
+        state_val = ordine[k]
+        if (state_val - 1) % step_vis == 0 or state_val == 1 or state_val == N - 1:
+            tick_positions.append(k)
+            tick_labels.append(str(state_val))
+            
+    ax4.set_xticks(tick_positions)
+    ax4.set_yticks(tick_positions)
     ax4.set_xticklabels(tick_labels, fontsize=7, rotation=45)
     ax4.set_yticklabels(tick_labels, fontsize=7)
+    
     ax4.set_title("Matrice P — Forma normale (Stewart)\n"
                   "[Slide 24-25]: assorbenti | transienti")
+    # Il blocco I2 è sempre un 2x2 in alto a sinistra (stati 0 e N)
     ax4.add_patch(plt.Rectangle((-0.5, -0.5), 2, 2,
                                 fill=False, ec='red', lw=2.5))
     ax4.text(0.5, -1.2, "Blocco I₂\n(assorbenti)",
@@ -491,10 +542,10 @@ def plot_analisi(a: int, b: int, p: float, n_sim: int = 40_000):
     ax6.legend(fontsize=8)
     ax6.grid(True, alpha=0.3)
 
-    plt.savefig("dtmc_analisi_completa.png",
+    plt.savefig("outputs/dtmc_analisi_completa.png",
                 dpi=150, bbox_inches='tight')
     plt.close()
-    print("  OK  Grafici salvati: dtmc_analisi_completa.png")
+    print("  OK  Grafici salvati: outputs/dtmc_analisi_completa.png")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -579,9 +630,9 @@ def report(a: int, b: int, p: float):
     log(sep)
 
     # Scrittura su file
-    with open("report_simulazione.txt", "w", encoding="utf-8") as f:
+    with open("outputs/report_simulazione.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(output_lines) + "\n")
-    print("  OK  Report salvato: report_simulazione.txt")
+    print("  OK  Report salvato: outputs/report_simulazione.txt")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -589,12 +640,15 @@ def report(a: int, b: int, p: float):
 # ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    # Assicuriamoci che la cartella outputs esista
+    os.makedirs("outputs", exist_ok=True)
+
     # Parametri dal file xlsx del professore
     a, b, p = 10, 70, 0.49
 
     # 1) Grafo didattico Toy Model N=5
     disegna_grafo(N=5, p=0.49,
-                  path_out="catena_toy.png")
+                  path_out="outputs/catena_toy.png")
 
     # 2) Report a terminale
     report(a=a, b=b, p=p)
